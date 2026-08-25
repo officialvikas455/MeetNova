@@ -1,0 +1,1035 @@
+/* =========================================================
+   MEETNOVA LOBBY
+========================================================= */
+
+.lobbyPage {
+  min-height: 100vh;
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+
+  display: flex;
+  flex-direction: column;
+
+  background:
+    radial-gradient(
+      circle at 78% 0%,
+      rgba(116, 39, 255, 0.22),
+      transparent 28%
+    ),
+    radial-gradient(
+      circle at 15% 85%,
+      rgba(0, 116, 255, 0.18),
+      transparent 28%
+    ),
+    linear-gradient(
+      135deg,
+      #020617 0%,
+      #05091b 45%,
+      #08051e 100%
+    );
+
+  color: white;
+}
+
+
+/* =========================================================
+   BACKGROUND GLOW
+========================================================= */
+
+.lobbyGlow {
+  position: absolute;
+
+  border-radius: 50%;
+
+  pointer-events: none;
+
+  filter: blur(100px);
+
+  z-index: 0;
+}
+
+.lobbyGlowOne {
+  width: 500px;
+  height: 500px;
+
+  top: -280px;
+  right: 5%;
+
+  background: rgba(122, 35, 255, 0.28);
+}
+
+.lobbyGlowTwo {
+  width: 400px;
+  height: 400px;
+
+  bottom: -220px;
+  left: -120px;
+
+  background: rgba(0, 112, 255, 0.18);
+}
+
+.lobbyGlowThree {
+  width: 300px;
+  height: 300px;
+
+  right: -100px;
+  bottom: 5%;
+
+  background: rgba(180, 40, 255, 0.15);
+}
+
+
+/* =========================================================
+   STARS
+========================================================= */
+
+.starsLayer {
+  position: absolute;
+
+  inset: 0;
+
+  opacity: 0.65;
+
+  pointer-events: none;
+
+  background-image:
+    radial-gradient(
+      1px 1px at 15% 25%,
+      rgba(255,255,255,0.8),
+      transparent
+    ),
+    radial-gradient(
+      1px 1px at 37% 12%,
+      rgba(100,180,255,0.9),
+      transparent
+    ),
+    radial-gradient(
+      1px 1px at 58% 32%,
+      rgba(255,255,255,0.7),
+      transparent
+    ),
+    radial-gradient(
+      1px 1px at 80% 18%,
+      rgba(160,100,255,0.9),
+      transparent
+    ),
+    radial-gradient(
+      1px 1px at 92% 48%,
+      rgba(255,255,255,0.7),
+      transparent
+    ),
+    radial-gradient(
+      1px 1px at 24% 75%,
+      rgba(80,150,255,0.7),
+      transparent
+    ),
+    radial-gradient(
+      1px 1px at 72% 82%,
+      rgba(180,100,255,0.8),
+      transparent
+    );
+
+  z-index: 0;
+}
+
+
+/* =========================================================
+   HEADER
+========================================================= */
+
+.lobbyHeader {
+  position: relative;
+
+  z-index: 5;
+
+  width: 100%;
+
+  padding:
+    22px 2.6vw;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+}
+
+
+/* =========================================================
+   BRAND
+========================================================= */
+
+.lobbyBrand {
+  display: flex;
+
+  align-items: center;
+
+  gap: 16px;
+}
+
+.lobbyBrandIcon {
+  width: 50px;
+  height: 50px;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 14px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #2289ff,
+      #5146e5 55%,
+      #a126f4
+    );
+
+  box-shadow:
+    0 10px 35px rgba(75, 70, 230, 0.4);
+
+  position: relative;
+}
+
+.lobbyBrandIcon::after {
+  content: "";
+
+  position: absolute;
+
+  inset: 1px;
+
+  border-radius: 13px;
+
+  border: 1px solid rgba(255,255,255,0.25);
+}
+
+.lobbyBrandIcon span {
+  position: relative;
+
+  z-index: 2;
+
+  font-size: 28px;
+
+  font-weight: 800;
+
+  color: white;
+}
+
+.lobbyBrand h1 {
+  margin: 0;
+
+  font-size: 32px;
+
+  font-weight: 800;
+
+  letter-spacing: -1.5px;
+
+  color: #2997ff;
+}
+
+.lobbyBrand h1 span {
+  background:
+    linear-gradient(
+      90deg,
+      #3ca7ff,
+      #7746ff,
+      #d72aff
+    );
+
+  -webkit-background-clip: text;
+
+  background-clip: text;
+
+  -webkit-text-fill-color: transparent;
+}
+
+
+/* =========================================================
+   SECURE BADGE
+========================================================= */
+
+.secureBadge {
+  display: flex;
+
+  align-items: center;
+
+  gap: 9px;
+
+  padding:
+    10px 15px;
+
+  border-radius: 25px;
+
+  background:
+    rgba(15, 23, 42, 0.55);
+
+  border:
+    1px solid rgba(255,255,255,0.13);
+
+  backdrop-filter: blur(20px);
+
+  color: #e2e8f0;
+
+  font-size: 12px;
+}
+
+.secureBadge svg {
+  font-size: 18px;
+
+  color: #e2e8f0;
+}
+
+.secureDot {
+  width: 9px;
+  height: 9px;
+
+  border-radius: 50%;
+
+  background: #42e6a4;
+
+  box-shadow:
+    0 0 12px rgba(66,230,164,0.9);
+}
+
+
+/* =========================================================
+   MAIN
+========================================================= */
+
+.lobbyMain {
+  position: relative;
+
+  z-index: 2;
+
+  flex: 1;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  padding:
+    15px 2.6vw 45px;
+}
+
+
+/* =========================================================
+   MAIN CARD
+========================================================= */
+
+.lobbyCard {
+  width: 100%;
+
+  max-width: 1450px;
+
+  min-height: 590px;
+
+  display: grid;
+
+  grid-template-columns:
+    0.82fr
+    1.18fr;
+
+  align-items: center;
+
+  gap: 50px;
+
+  padding:
+    42px;
+
+  border-radius: 28px;
+
+  position: relative;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(18, 29, 49, 0.88),
+      rgba(8, 15, 34, 0.76)
+    );
+
+  border:
+    1px solid rgba(103, 145, 210, 0.35);
+
+  backdrop-filter: blur(30px);
+
+  box-shadow:
+    0 35px 100px rgba(0,0,0,0.55),
+    inset 0 1px 0 rgba(255,255,255,0.06);
+
+  overflow: hidden;
+}
+
+
+/* CARD PURPLE LIGHT */
+
+.lobbyCard::after {
+  content: "";
+
+  position: absolute;
+
+  width: 500px;
+  height: 500px;
+
+  right: -200px;
+  bottom: -300px;
+
+  border-radius: 50%;
+
+  background:
+    rgba(119, 52, 255, 0.2);
+
+  filter: blur(100px);
+
+  pointer-events: none;
+}
+
+
+/* =========================================================
+   LEFT CONTENT
+========================================================= */
+
+.lobbyContent {
+  position: relative;
+
+  z-index: 3;
+
+  padding:
+    20px 15px 20px 20px;
+}
+
+.conferenceLabel {
+  margin-bottom: 24px;
+
+  color: #438dff;
+
+  font-size: 13px;
+
+  font-weight: 700;
+
+  letter-spacing: 2px;
+}
+
+.lobbyContent h2 {
+  margin: 0;
+
+  color: #f8fafc;
+
+  font-size: clamp(42px, 4vw, 58px);
+
+  line-height: 1.05;
+
+  font-weight: 800;
+
+  letter-spacing: -2px;
+}
+
+.lobbyDescription {
+  max-width: 470px;
+
+  margin-top: 25px;
+
+  margin-bottom: 38px;
+
+  color: #b6c0d2;
+
+  font-size: 17px;
+
+  line-height: 1.8;
+}
+
+
+/* =========================================================
+   USERNAME
+========================================================= */
+
+.usernameWrapper {
+  width: 100%;
+
+  max-width: 480px;
+
+  min-height: 62px;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 14px;
+
+  padding:
+    8px 20px;
+
+  border-radius: 15px;
+
+  border:
+    1px solid rgba(160, 180, 220, 0.65);
+
+  background:
+    rgba(5, 13, 31, 0.35);
+
+  transition:
+    border 0.25s ease,
+    box-shadow 0.25s ease;
+}
+
+.usernameWrapper:hover {
+  border-color:
+    rgba(120, 150, 220, 0.9);
+}
+
+.usernameWrapper:focus-within {
+  border-color: #6d70ff;
+
+  box-shadow:
+    0 0 0 3px rgba(99,102,241,0.12),
+    0 10px 35px rgba(59,80,220,0.12);
+}
+
+.usernameWrapper > svg {
+  color: #8d9ab2;
+
+  font-size: 23px;
+}
+
+
+/* =========================================================
+   CONNECT
+========================================================= */
+
+.connectButton {
+  width: 100%;
+
+  max-width: 480px;
+
+  height: 64px;
+
+  margin-top: 30px;
+
+  display: flex !important;
+
+  align-items: center;
+
+  justify-content: center;
+
+  padding:
+    0 24px !important;
+}
+
+
+/* =========================================================
+   CONNECTION INFO
+========================================================= */
+
+.connectionInfo {
+  max-width: 480px;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  gap: 10px;
+
+  margin-top: 28px;
+
+  color: #9aa6bb;
+
+  font-size: 13px;
+}
+
+.connectionInfo svg {
+  color: #35e89b;
+
+  font-size: 19px;
+}
+
+
+/* =========================================================
+   VIDEO PREVIEW
+========================================================= */
+
+.previewSection {
+  position: relative;
+
+  z-index: 2;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+}
+
+.previewWrapper {
+  position: relative;
+
+  width: 100%;
+
+  max-width: 650px;
+
+  aspect-ratio: 16 / 10;
+
+  overflow: hidden;
+
+  border-radius: 20px;
+
+  border:
+    1px solid rgba(255,255,255,0.22);
+
+  background:
+    linear-gradient(
+      135deg,
+      #18213b,
+      #1a0f2d
+    );
+
+  box-shadow:
+    0 30px 70px rgba(0,0,0,0.55),
+    0 0 50px rgba(109,40,217,0.12);
+}
+
+
+/* VIDEO */
+
+.lobbyVideo {
+  width: 100%;
+  height: 100%;
+
+  display: block;
+
+  object-fit: cover;
+
+  background:
+    radial-gradient(
+      circle at center,
+      #26345b,
+      #090d1b
+    );
+
+  transform: scaleX(-1);
+}
+
+
+/* =========================================================
+   YOU BADGE
+========================================================= */
+
+.youBadge {
+  position: absolute;
+
+  top: 18px;
+  left: 18px;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 9px;
+
+  padding:
+    11px 16px;
+
+  border-radius: 11px;
+
+  background:
+    rgba(7, 13, 30, 0.8);
+
+  border:
+    1px solid rgba(255,255,255,0.1);
+
+  backdrop-filter: blur(15px);
+
+  color: white;
+
+  font-size: 14px;
+
+  font-weight: 600;
+}
+
+.youBadge span {
+  width: 9px;
+  height: 9px;
+
+  border-radius: 50%;
+
+  background: #42e6a4;
+
+  box-shadow:
+    0 0 10px #42e6a4;
+}
+
+
+/* =========================================================
+   FULLSCREEN
+========================================================= */
+
+.fullscreenButton {
+  position: absolute;
+
+  top: 17px;
+  right: 17px;
+
+  width: 45px;
+  height: 45px;
+
+  border: 0;
+
+  border-radius: 12px;
+
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  cursor: pointer;
+
+  color: white;
+
+  background:
+    rgba(8, 12, 28, 0.75);
+
+  backdrop-filter: blur(15px);
+
+  transition: 0.25s ease;
+}
+
+.fullscreenButton:hover {
+  background:
+    rgba(99,102,241,0.65);
+
+  transform: scale(1.05);
+}
+
+
+/* =========================================================
+   VIDEO CONTROLS
+========================================================= */
+
+.previewControls {
+  position: absolute;
+
+  left: 50%;
+
+  bottom: 25px;
+
+  transform: translateX(-50%);
+
+  min-width: 280px;
+
+  height: 78px;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  gap: 18px;
+
+  padding:
+    10px 25px;
+
+  border-radius: 40px;
+
+  background:
+    rgba(9, 14, 32, 0.72);
+
+  border:
+    1px solid rgba(255,255,255,0.16);
+
+  backdrop-filter: blur(20px);
+}
+
+.previewControl {
+  width: 55px !important;
+  height: 55px !important;
+
+  color: white !important;
+
+  background:
+    rgba(255,255,255,0.035) !important;
+
+  border:
+    1px solid rgba(255,255,255,0.12) !important;
+
+  transition: 0.25s ease !important;
+}
+
+.previewControl:hover {
+  background:
+    rgba(99,102,241,0.35) !important;
+
+  transform: translateY(-2px);
+}
+
+.previewControl svg {
+  font-size: 27px;
+}
+
+.controlDivider {
+  width: 1px;
+
+  height: 35px;
+
+  background:
+    rgba(255,255,255,0.16);
+}
+
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (max-width: 1050px) {
+
+  .lobbyCard {
+    grid-template-columns: 1fr;
+
+    max-width: 760px;
+
+    padding: 35px;
+  }
+
+  .lobbyContent {
+    text-align: center;
+
+    padding: 15px;
+  }
+
+  .conferenceLabel {
+    margin-bottom: 18px;
+  }
+
+  .lobbyDescription {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .usernameWrapper,
+  .connectButton {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .connectionInfo {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .previewSection {
+    width: 100%;
+  }
+
+  .previewWrapper {
+    max-width: 620px;
+  }
+}
+
+
+/* =========================================================
+   TABLET
+========================================================= */
+
+@media (max-width: 700px) {
+
+  .lobbyHeader {
+    padding: 18px 20px;
+  }
+
+  .lobbyBrandIcon {
+    width: 43px;
+    height: 43px;
+  }
+
+  .lobbyBrandIcon span {
+    font-size: 24px;
+  }
+
+  .lobbyBrand h1 {
+    font-size: 26px;
+  }
+
+  .secureBadge {
+    padding: 9px 12px;
+  }
+
+  .secureBadge span:not(.secureDot) {
+    display: none;
+  }
+
+  .lobbyMain {
+    padding:
+      15px 15px 30px;
+  }
+
+  .lobbyCard {
+    padding: 25px 18px 25px;
+
+    border-radius: 22px;
+
+    gap: 30px;
+  }
+
+  .lobbyContent h2 {
+    font-size: 39px;
+
+    letter-spacing: -1.5px;
+  }
+
+  .lobbyDescription {
+    font-size: 15px;
+
+    line-height: 1.65;
+
+    margin-top: 20px;
+
+    margin-bottom: 28px;
+  }
+
+  .previewWrapper {
+    aspect-ratio: 4 / 3;
+  }
+
+  .previewControls {
+    min-width: 220px;
+
+    height: 65px;
+
+    bottom: 15px;
+  }
+
+  .previewControl {
+    width: 47px !important;
+    height: 47px !important;
+  }
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 480px) {
+
+  .lobbyHeader {
+    padding:
+      15px;
+  }
+
+  .lobbyBrand {
+    gap: 10px;
+  }
+
+  .lobbyBrandIcon {
+    width: 39px;
+    height: 39px;
+
+    border-radius: 11px;
+  }
+
+  .lobbyBrandIcon span {
+    font-size: 21px;
+  }
+
+  .lobbyBrand h1 {
+    font-size: 23px;
+  }
+
+  .secureBadge {
+    padding: 8px 10px;
+  }
+
+  .secureBadge svg {
+    font-size: 16px;
+  }
+
+  .lobbyCard {
+    padding:
+      28px 16px;
+
+    border-radius: 20px;
+  }
+
+  .conferenceLabel {
+    font-size: 10px;
+
+    letter-spacing: 1.6px;
+  }
+
+  .lobbyContent h2 {
+    font-size: 34px;
+  }
+
+  .lobbyDescription {
+    font-size: 14px;
+  }
+
+  .usernameWrapper {
+    min-height: 58px;
+
+    padding:
+      6px 15px;
+  }
+
+  .connectButton {
+    height: 58px;
+  }
+
+  .connectionInfo {
+    font-size: 11px;
+  }
+
+  .previewWrapper {
+    aspect-ratio: 4 / 3;
+
+    border-radius: 16px;
+  }
+
+  .youBadge {
+    top: 10px;
+    left: 10px;
+
+    padding:
+      8px 11px;
+
+    font-size: 11px;
+  }
+
+  .fullscreenButton {
+    top: 9px;
+    right: 9px;
+
+    width: 38px;
+    height: 38px;
+  }
+
+  .previewControls {
+    min-width: 170px;
+
+    height: 58px;
+
+    gap: 8px;
+
+    padding:
+      7px 12px;
+
+    bottom: 10px;
+  }
+
+  .previewControl {
+    width: 43px !important;
+    height: 43px !important;
+  }
+
+  .previewControl svg {
+    font-size: 21px;
+  }
+
+  .controlDivider {
+    height: 25px;
+  }
+}
