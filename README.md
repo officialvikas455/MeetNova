@@ -56,7 +56,7 @@ MeetNova/
 ### Clone the repository
 
 ```bash
-git clone https://github.com/your-username/MeetNova.git
+git clone https://github.com/officialvikas455/MeetNova.git
 cd MeetNova
 ```
 
@@ -100,7 +100,7 @@ JWT_SECRET=your_jwt_secret
 
 **Vikas Gangwar**
 
-GitHub: https://github.com/your-username
+GitHub: https://github.com/officialvikas455
 
 ---
 
