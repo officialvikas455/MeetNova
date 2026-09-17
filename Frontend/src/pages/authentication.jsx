@@ -610,10 +610,16 @@ export default function Authentication() {
                               }
                             } catch (err) {
                               console.error("Google authentication error:", err);
-                              setError(
-                                err?.response?.data?.message ||
-                                  "Google authentication failed. Please try again."
-                              );
+                              let errMsg = "Google authentication failed. Please try again.";
+                              if (err?.response?.status === 404) {
+                                errMsg =
+                                  "Backend deployment pending on Render. Please trigger 'Manual Deploy' on Render or try again in a minute.";
+                              } else if (err?.response?.data?.message) {
+                                errMsg = err.response.data.message;
+                              } else if (err?.message) {
+                                errMsg = `Google Auth error: ${err.message}`;
+                              }
+                              setError(errMsg);
                             }
                           }}
                           onError={() => {
