@@ -1,0 +1,274 @@
+/* =========================================================
+   MEETNOVA LOGO COMPONENT STYLES
+   Ultra-premium, modern SaaS branding across all routes
+========================================================= */
+
+.meetnova-logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  user-select: none;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+}
+
+.meetnova-logo--clickable {
+  cursor: pointer;
+}
+
+.meetnova-logo--clickable:hover {
+  transform: translateY(-1px);
+}
+
+.meetnova-logo--clickable:active {
+  transform: translateY(0);
+}
+
+/* ================= ICON BADGE ================= */
+
+.meetnova-logo__icon-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #3b82f6 0%, #6366f1 45%, #9333ea 100%);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow: 
+    0 8px 22px -4px rgba(99, 102, 241, 0.45),
+    0 2px 8px -2px rgba(59, 130, 246, 0.3),
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.4);
+  transition: box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.meetnova-logo--clickable:hover .meetnova-logo__icon-wrapper {
+  transform: scale(1.03);
+  box-shadow: 
+    0 12px 28px -4px rgba(99, 102, 241, 0.6),
+    0 4px 14px -2px rgba(59, 130, 246, 0.45),
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.55);
+}
+
+.meetnova-logo__icon-wrapper svg {
+  color: #ffffff;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+  transition: transform 0.25s ease;
+}
+
+.meetnova-logo--clickable:hover .meetnova-logo__icon-wrapper svg {
+  transform: scale(1.04);
+}
+
+/* Active online status indicator */
+.meetnova-logo__dot {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  border-radius: 50%;
+  background-color: #34d399;
+  border: 2px solid #070b2b;
+  box-shadow: 0 0 10px rgba(52, 211, 153, 0.95);
+  z-index: 2;
+  animation: logoPulse 2.6s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes logoPulse {
+  0%, 100% {
+    opacity: 1;
+    box-shadow: 0 0 10px rgba(52, 211, 153, 0.95);
+  }
+  50% {
+    opacity: 0.8;
+    box-shadow: 0 0 16px rgba(52, 211, 153, 1);
+  }
+}
+
+/* ================= TYPOGRAPHY ================= */
+
+.meetnova-logo__text {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  line-height: 1.15;
+}
+
+.meetnova-logo__title {
+  margin: 0;
+  padding: 0;
+  display: inline-flex;
+  align-items: baseline;
+  font-family: 'Plus Jakarta Sans', 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-weight: 750;
+  letter-spacing: -0.025em;
+}
+
+/* "Meet" - Crisp luminous white */
+.meetnova-logo__title-meet {
+  background: linear-gradient(180deg, #ffffff 0%, #e2e8f0 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: #ffffff;
+  font-weight: 800;
+  filter: drop-shadow(0 2px 10px rgba(255, 255, 255, 0.15));
+}
+
+/* "Nova" - Vibrant cosmic gradient */
+.meetnova-logo__title-nova {
+  background: linear-gradient(135deg, #60a5fa 0%, #818cf8 50%, #c084fc 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: #818cf8;
+  font-weight: 800;
+  filter: drop-shadow(0 2px 12px rgba(129, 140, 248, 0.45));
+}
+
+/* Tagline */
+.meetnova-logo__subtitle {
+  display: block;
+  font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-weight: 650;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: rgba(199, 210, 254, 0.7);
+  white-space: nowrap;
+  margin-top: 2px;
+}
+
+/* ================= SIZES ================= */
+
+/* Small (e.g., active in-room topbar) */
+.meetnova-logo--sm {
+  gap: 10px;
+}
+
+.meetnova-logo--sm .meetnova-logo__icon-wrapper {
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+}
+
+.meetnova-logo--sm .meetnova-logo__icon-wrapper svg {
+  font-size: 21px;
+}
+
+.meetnova-logo--sm .meetnova-logo__dot {
+  width: 9px;
+  height: 9px;
+  border-width: 1.5px;
+}
+
+.meetnova-logo--sm .meetnova-logo__title {
+  font-size: 20px;
+  letter-spacing: -0.02em;
+}
+
+.meetnova-logo--sm .meetnova-logo__subtitle {
+  font-size: 7.5px;
+  letter-spacing: 0.22em;
+}
+
+/* Medium / Default (navbars: landing, home, history) */
+.meetnova-logo--md {
+  gap: 12px;
+}
+
+.meetnova-logo--md .meetnova-logo__icon-wrapper {
+  width: 44px;
+  height: 44px;
+  border-radius: 13px;
+}
+
+.meetnova-logo--md .meetnova-logo__icon-wrapper svg {
+  font-size: 25px;
+}
+
+.meetnova-logo--md .meetnova-logo__dot {
+  width: 10.5px;
+  height: 10.5px;
+}
+
+.meetnova-logo--md .meetnova-logo__title {
+  font-size: 23px;
+  letter-spacing: -0.025em;
+}
+
+.meetnova-logo--md .meetnova-logo__subtitle {
+  font-size: 8.5px;
+  letter-spacing: 0.24em;
+}
+
+/* Large (auth page hero, meeting lobby) */
+.meetnova-logo--lg {
+  gap: 14px;
+}
+
+.meetnova-logo--lg .meetnova-logo__icon-wrapper {
+  width: 52px;
+  height: 52px;
+  border-radius: 15px;
+}
+
+.meetnova-logo--lg .meetnova-logo__icon-wrapper svg {
+  font-size: 30px;
+}
+
+.meetnova-logo--lg .meetnova-logo__dot {
+  width: 12px;
+  height: 12px;
+}
+
+.meetnova-logo--lg .meetnova-logo__title {
+  font-size: 28px;
+  letter-spacing: -0.03em;
+}
+
+.meetnova-logo--lg .meetnova-logo__subtitle {
+  font-size: 9.5px;
+  letter-spacing: 0.25em;
+  margin-top: 3px;
+}
+
+/* ================= RESPONSIVE ================= */
+
+@media (max-width: 640px) {
+  .meetnova-logo__subtitle {
+    display: none;
+  }
+
+  .meetnova-logo--md {
+    gap: 9px;
+  }
+
+  .meetnova-logo--md .meetnova-logo__icon-wrapper {
+    width: 38px;
+    height: 38px;
+  }
+
+  .meetnova-logo--md .meetnova-logo__icon-wrapper svg {
+    font-size: 22px;
+  }
+
+  .meetnova-logo--md .meetnova-logo__title {
+    font-size: 20px;
+  }
+
+  .meetnova-logo--lg {
+    gap: 11px;
+  }
+
+  .meetnova-logo--lg .meetnova-logo__icon-wrapper {
+    width: 44px;
+    height: 44px;
+  }
+
+  .meetnova-logo--lg .meetnova-logo__icon-wrapper svg {
+    font-size: 25px;
+  }
+
+  .meetnova-logo--lg .meetnova-logo__title {
+    font-size: 24px;
+  }
+}

@@ -28,6 +28,29 @@ import {
 } from "@mui/icons-material";
 
 import { AuthContext } from "../contexts/AuthContext";
+import Logo from "../components/Logo.jsx";
+import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
+
+const GoogleIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24">
+    <path
+      fill="#4285F4"
+      d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"
+    />
+    <path
+      fill="#34A853"
+      d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.26v3.15C3.27 21.36 7.34 24 12 24z"
+    />
+    <path
+      fill="#FBBC05"
+      d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.26C.46 8.16 0 9.94 0 12s.46 3.84 1.26 5.42l4.02-3.15z"
+    />
+    <path
+      fill="#EA4335"
+      d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.34 0 3.27 2.64 1.26 6.58l4.02 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
+    />
+  </svg>
+);
 
 const defaultTheme = createTheme({
   typography: {
@@ -51,23 +74,41 @@ export default function Authentication() {
   const [formState, setFormState] = React.useState(0);
   const [open, setOpen] = React.useState(false);
   const [showPassword, setShowPassword] = React.useState(false);
+  const [confirmPassword, setConfirmPassword] = React.useState("");
+  const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
 
-  const { handleRegister, handleLogin } = React.useContext(AuthContext);
+  const {
+    handleRegister,
+    handleLogin,
+    handleResetPassword,
+    handleGoogleAuth,
+  } = React.useContext(AuthContext);
+
+  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
+
+  const handleMissingGoogleConfig = () => {
+    setError(
+      "To enable live Google Sign-In, please add your VITE_GOOGLE_CLIENT_ID in the frontend/.env file."
+    );
+  };
 
   const handleAuth = async () => {
     try {
       setError("");
 
-      if (!username || !password || (formState === 1 && !name)) {
-        setError("Please fill in all required fields.");
-        return;
-      }
-
       if (formState === 0) {
+        if (!username || !password) {
+          setError("Please provide both username and password.");
+          return;
+        }
         await handleLogin(username, password);
       }
 
       if (formState === 1) {
+        if (!name || !username || !password) {
+          setError("Please fill in all required fields.");
+          return;
+        }
         const result = await handleRegister(name, username, password);
 
         setUsername("");
@@ -75,6 +116,31 @@ export default function Authentication() {
         setName("");
 
         setMessage(result || "Registration successful! Please login.");
+        setOpen(true);
+
+        setFormState(0);
+      }
+
+      if (formState === 2) {
+        if (!username || !password || !confirmPassword) {
+          setError("Please fill in all required fields.");
+          return;
+        }
+        if (password.length < 6) {
+          setError("New password must be at least 6 characters long.");
+          return;
+        }
+        if (password !== confirmPassword) {
+          setError("Passwords do not match. Please verify.");
+          return;
+        }
+
+        const result = await handleResetPassword(username, password);
+
+        setPassword("");
+        setConfirmPassword("");
+
+        setMessage(result || "Password reset successful! Please log in.");
         setOpen(true);
 
         setFormState(0);
@@ -93,10 +159,13 @@ export default function Authentication() {
   const switchForm = (state) => {
     setFormState(state);
     setError("");
+    setPassword("");
+    setConfirmPassword("");
   };
 
   return (
-    <ThemeProvider theme={defaultTheme}>
+    <GoogleOAuthProvider clientId={googleClientId || "temp-google-client-id"}>
+      <ThemeProvider theme={defaultTheme}>
       <CssBaseline />
 
       <Box
@@ -170,46 +239,9 @@ export default function Authentication() {
               sx={{
                 position: "relative",
                 zIndex: 2,
-                display: "flex",
-                alignItems: "center",
-                gap: 1.5,
               }}
             >
-              <Avatar
-                sx={{
-                  width: 55,
-                  height: 55,
-                  borderRadius: "16px",
-                  background: "linear-gradient(135deg,#6366f1,#2563eb)",
-                  boxShadow: "0 10px 30px rgba(79,70,229,0.5)",
-                }}
-              >
-                <VideoCall sx={{ fontSize: 32 }} />
-              </Avatar>
-
-              <Box>
-                <Typography
-                  sx={{
-                    color: "white",
-                    fontSize: { xs: 25, md: 30 },
-                    fontWeight: 800,
-                    lineHeight: 1,
-                  }}
-                >
-                  MeetNova
-                </Typography>
-
-                <Typography
-                  sx={{
-                    color: "rgba(255,255,255,0.65)",
-                    fontSize: 13,
-                    mt: 0.5,
-                    letterSpacing: 0.5,
-                  }}
-                >
-                  Connect • Collaborate • Create
-                </Typography>
-              </Box>
+              <Logo size="lg" to="/" subtitle="Connect • Collaborate • Create" />
             </Box>
 
             {/* Hero Content */}
@@ -401,7 +433,12 @@ export default function Authentication() {
                     mt: 2,
                   }}
                 >
-                  Welcome {formState === 0 ? "Back" : "to MeetNova"}
+                  Welcome{" "}
+                  {formState === 0
+                    ? "Back"
+                    : formState === 1
+                    ? "to MeetNova"
+                    : "• Reset Password"}
                 </Typography>
 
                 <Typography
@@ -413,79 +450,223 @@ export default function Authentication() {
                 >
                   {formState === 0
                     ? "Sign in to continue to MeetNova"
-                    : "Create your account and start meeting"}
+                    : formState === 1
+                    ? "Create your account and start meeting"
+                    : "Enter your username and choose a new password"}
                 </Typography>
               </Box>
 
               {/* Sign In / Sign Up */}
 
-              <Box
-                sx={{
-                  display: "flex",
-                  p: 0.6,
-                  borderRadius: "14px",
-                  background: "#eef1f8",
-                  mb: 3,
-                }}
-              >
-                <Button
-                  fullWidth
-                  onClick={() => switchForm(0)}
+              {formState !== 2 ? (
+                <Box
                   sx={{
-                    py: 1.2,
-                    borderRadius: "10px",
-                    textTransform: "none",
-                    fontSize: 15,
-                    fontWeight: 700,
-                    color: formState === 0 ? "white" : "#687086",
-                    background:
-                      formState === 0
-                        ? "linear-gradient(90deg,#6366f1,#2563eb)"
-                        : "transparent",
-                    boxShadow:
-                      formState === 0
-                        ? "0 7px 20px rgba(79,70,229,0.25)"
-                        : "none",
-                    "&:hover": {
+                    display: "flex",
+                    p: 0.6,
+                    borderRadius: "14px",
+                    background: "#eef1f8",
+                    mb: 3,
+                  }}
+                >
+                  <Button
+                    fullWidth
+                    onClick={() => switchForm(0)}
+                    sx={{
+                      py: 1.2,
+                      borderRadius: "10px",
+                      textTransform: "none",
+                      fontSize: 15,
+                      fontWeight: 700,
+                      color: formState === 0 ? "white" : "#687086",
                       background:
                         formState === 0
                           ? "linear-gradient(90deg,#6366f1,#2563eb)"
-                          : "rgba(255,255,255,0.5)",
-                    },
-                  }}
-                >
-                  Sign In
-                </Button>
+                          : "transparent",
+                      boxShadow:
+                        formState === 0
+                          ? "0 7px 20px rgba(79,70,229,0.25)"
+                          : "none",
+                      "&:hover": {
+                        background:
+                          formState === 0
+                            ? "linear-gradient(90deg,#6366f1,#2563eb)"
+                            : "rgba(255,255,255,0.5)",
+                      },
+                    }}
+                  >
+                    Sign In
+                  </Button>
 
-                <Button
-                  fullWidth
-                  onClick={() => switchForm(1)}
-                  sx={{
-                    py: 1.2,
-                    borderRadius: "10px",
-                    textTransform: "none",
-                    fontSize: 15,
-                    fontWeight: 700,
-                    color: formState === 1 ? "white" : "#687086",
-                    background:
-                      formState === 1
-                        ? "linear-gradient(90deg,#6366f1,#2563eb)"
-                        : "transparent",
-                    boxShadow:
-                      formState === 1
-                        ? "0 7px 20px rgba(79,70,229,0.25)"
-                        : "none",
-                    "&:hover": {
+                  <Button
+                    fullWidth
+                    onClick={() => switchForm(1)}
+                    sx={{
+                      py: 1.2,
+                      borderRadius: "10px",
+                      textTransform: "none",
+                      fontSize: 15,
+                      fontWeight: 700,
+                      color: formState === 1 ? "white" : "#687086",
                       background:
                         formState === 1
                           ? "linear-gradient(90deg,#6366f1,#2563eb)"
-                          : "rgba(255,255,255,0.5)",
-                    },
+                          : "transparent",
+                      boxShadow:
+                        formState === 1
+                          ? "0 7px 20px rgba(79,70,229,0.25)"
+                          : "none",
+                      "&:hover": {
+                        background:
+                          formState === 1
+                            ? "linear-gradient(90deg,#6366f1,#2563eb)"
+                            : "rgba(255,255,255,0.5)",
+                      },
+                    }}
+                  >
+                    Sign Up
+                  </Button>
+                </Box>
+              ) : (
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    p: 1.2,
+                    px: 2,
+                    borderRadius: "12px",
+                    background: "rgba(99, 102, 241, 0.08)",
+                    border: "1px solid rgba(99, 102, 241, 0.2)",
+                    mb: 3,
                   }}
                 >
-                  Sign Up
-                </Button>
-              </Box>
+                  <Typography
+                    sx={{ fontSize: 13, fontWeight: 700, color: "#4f46e5" }}
+                  >
+                    Account Recovery
+                  </Typography>
+
+                  <Button
+                    size="small"
+                    onClick={() => switchForm(0)}
+                    sx={{
+                      textTransform: "none",
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: "#4f46e5",
+                      p: 0,
+                      minWidth: "auto",
+                      "&:hover": { textDecoration: "underline" },
+                    }}
+                  >
+                    ← Back to Sign In
+                  </Button>
+                </Box>
+              )}
+
+              {/* Google Sign In Option */}
+              {formState !== 2 && (
+                <>
+                  <Box
+                    sx={{
+                      mb: 2,
+                      display: "flex",
+                      justifyContent: "center",
+                      width: "100%",
+                    }}
+                  >
+                    {googleClientId ? (
+                      <Box
+                        sx={{
+                          width: "100%",
+                          display: "flex",
+                          justifyContent: "center",
+                          "& > div": { width: "100% !important" },
+                        }}
+                      >
+                        <GoogleLogin
+                          onSuccess={async (credentialResponse) => {
+                            try {
+                              if (credentialResponse.credential) {
+                                await handleGoogleAuth(
+                                  credentialResponse.credential
+                                );
+                              }
+                            } catch (err) {
+                              setError(
+                                err?.response?.data?.message ||
+                                  "Google authentication failed. Please try again."
+                              );
+                            }
+                          }}
+                          onError={() => {
+                            setError(
+                              "Google sign-in was unsuccessful. Please try again."
+                            );
+                          }}
+                          theme="outline"
+                          shape="rectangular"
+                          size="large"
+                          width="380"
+                          text={formState === 0 ? "signin_with" : "signup_with"}
+                        />
+                      </Box>
+                    ) : (
+                      <Button
+                        fullWidth
+                        onClick={handleMissingGoogleConfig}
+                        startIcon={<GoogleIcon />}
+                        sx={{
+                          py: 1.3,
+                          borderRadius: "12px",
+                          textTransform: "none",
+                          fontSize: 15,
+                          fontWeight: 600,
+                          color: "#1e293b",
+                          background: "#ffffff",
+                          border: "1px solid #d1d5db",
+                          boxShadow: "0 2px 6px rgba(0,0,0,0.04)",
+                          "&:hover": {
+                            background: "#f8fafc",
+                            borderColor: "#94a3b8",
+                            boxShadow: "0 4px 12px rgba(0,0,0,0.07)",
+                          },
+                          transition: "all 0.2s ease",
+                        }}
+                      >
+                        Continue with Google
+                      </Button>
+                    )}
+                  </Box>
+
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      my: 2.2,
+                      gap: 1.5,
+                    }}
+                  >
+                    <Box
+                      sx={{ flex: 1, height: "1px", background: "#e2e8f0" }}
+                    />
+                    <Typography
+                      sx={{
+                        fontSize: 11,
+                        fontWeight: 700,
+                        color: "#94a3b8",
+                        letterSpacing: 0.6,
+                        textTransform: "uppercase",
+                      }}
+                    >
+                      or continue with username
+                    </Typography>
+                    <Box
+                      sx={{ flex: 1, height: "1px", background: "#e2e8f0" }}
+                    />
+                  </Box>
+                </>
+              )}
 
               {/* Form */}
 
@@ -518,7 +699,7 @@ export default function Authentication() {
                   margin="normal"
                   required
                   fullWidth
-                  label="Password"
+                  label={formState === 2 ? "New Password" : "Password"}
                   value={password}
                   type={showPassword ? "text" : "password"}
                   onChange={(e) => setPassword(e.target.value)}
@@ -536,6 +717,37 @@ export default function Authentication() {
                     ),
                   }}
                 />
+
+                {formState === 2 && (
+                  <TextField
+                    margin="normal"
+                    required
+                    fullWidth
+                    label="Confirm New Password"
+                    value={confirmPassword}
+                    type={showConfirmPassword ? "text" : "password"}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    sx={inputStyle}
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton
+                            onClick={() =>
+                              setShowConfirmPassword(!showConfirmPassword)
+                            }
+                            edge="end"
+                          >
+                            {showConfirmPassword ? (
+                              <VisibilityOff />
+                            ) : (
+                              <Visibility />
+                            )}
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                )}
 
                 {/* Error */}
 
@@ -590,6 +802,7 @@ export default function Authentication() {
                     </Box>
 
                     <Button
+                      onClick={() => switchForm(2)}
                       sx={{
                         textTransform: "none",
                         fontSize: 13,
@@ -628,7 +841,11 @@ export default function Authentication() {
                     transition: "all 0.2s ease",
                   }}
                 >
-                  {formState === 0 ? "Login" : "Create Account"}
+                  {formState === 0
+                    ? "Login"
+                    : formState === 1
+                    ? "Create Account"
+                    : "Reset Password"}
                 </Button>
               </Box>
 
@@ -640,30 +857,54 @@ export default function Authentication() {
                   mt: 3,
                 }}
               >
-                <Typography
-                  sx={{
-                    color: "#697386",
-                    fontSize: 14,
-                  }}
-                >
-                  {formState === 0
-                    ? "Don't have an account?"
-                    : "Already have an account?"}
-
-                  <Button
-                    onClick={() => switchForm(formState === 0 ? 1 : 0)}
+                {formState === 2 ? (
+                  <Typography
                     sx={{
-                      ml: 0.5,
-                      textTransform: "none",
-                      fontWeight: 700,
-                      color: "#4f46e5",
-                      minWidth: "auto",
-                      p: 0,
+                      color: "#697386",
+                      fontSize: 14,
                     }}
                   >
-                    {formState === 0 ? "Sign Up" : "Sign In"}
-                  </Button>
-                </Typography>
+                    Remember your password?
+                    <Button
+                      onClick={() => switchForm(0)}
+                      sx={{
+                        ml: 0.5,
+                        textTransform: "none",
+                        fontWeight: 700,
+                        color: "#4f46e5",
+                        minWidth: "auto",
+                        p: 0,
+                      }}
+                    >
+                      Sign In
+                    </Button>
+                  </Typography>
+                ) : (
+                  <Typography
+                    sx={{
+                      color: "#697386",
+                      fontSize: 14,
+                    }}
+                  >
+                    {formState === 0
+                      ? "Don't have an account?"
+                      : "Already have an account?"}
+
+                    <Button
+                      onClick={() => switchForm(formState === 0 ? 1 : 0)}
+                      sx={{
+                        ml: 0.5,
+                        textTransform: "none",
+                        fontWeight: 700,
+                        color: "#4f46e5",
+                        minWidth: "auto",
+                        p: 0,
+                      }}
+                    >
+                      {formState === 0 ? "Sign Up" : "Sign In"}
+                    </Button>
+                  </Typography>
+                )}
               </Box>
 
               {/* Security */}
@@ -713,6 +954,7 @@ export default function Authentication() {
         }}
       />
     </ThemeProvider>
+  </GoogleOAuthProvider>
   );
 }
 

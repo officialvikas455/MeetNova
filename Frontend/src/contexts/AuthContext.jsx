@@ -82,11 +82,47 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const handleResetPassword = async (username, newPassword) => {
+    // eslint-disable-next-line no-useless-catch
+    try {
+      let response = await client.post("/reset_password", {
+        username,
+        newPassword,
+      });
+
+      if (response.status === HttpStatusCode.Ok) {
+        return response.data.message;
+      }
+    } catch (err) {
+      throw err;
+    }
+  };
+
+  const handleGoogleAuth = async (credential) => {
+    // eslint-disable-next-line no-useless-catch
+    try {
+      const response = await client.post("/google_login", {
+        credential,
+      });
+
+      if (response.status === HttpStatusCode.Ok) {
+        localStorage.setItem("token", response.data.token);
+        setUserData(response.data.user);
+        navigate("/home");
+        return response.data;
+      }
+    } catch (err) {
+      throw err;
+    }
+  };
+
   const data = {
     userData,
     setUserData,
     handleRegister,
     handleLogin,
+    handleGoogleAuth,
+    handleResetPassword,
     handleLogout,
     getHistoryOfUser,
     addToUserHistory,

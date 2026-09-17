@@ -19,6 +19,7 @@ import PersonIcon from "@mui/icons-material/Person";
 
 import server from "../environment";
 import styles from "../styles/videoComponent.module.css";
+import Logo from "../components/Logo.jsx";
 
 const server_url = server;
 
@@ -857,20 +858,7 @@ export default function VideoMeetComponent() {
 
           <div className="relative z-20 flex items-center justify-between px-6 py-5 md:px-10 lg:px-12">
             {/* Logo */}
-
-            <div className="flex items-center gap-4">
-              <div className="relative flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-600 shadow-[0_0_25px_rgba(99,102,241,0.45)]">
-                <span className="text-2xl font-bold text-white">M</span>
-
-                <div className="absolute inset-0 rounded-xl border border-white/20" />
-              </div>
-
-              <h1 className="text-3xl font-extrabold tracking-tight md:text-4xl">
-                <span className="bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-500 bg-clip-text text-transparent">
-                  MeetNova
-                </span>
-              </h1>
-            </div>
+            <Logo size="lg" to="/" />
 
             {/* Secure */}
 
@@ -1139,23 +1127,7 @@ export default function VideoMeetComponent() {
           {/* ================= TOP BAR ================= */}
 
           <div className="relative z-20 flex h-[75px] items-center justify-between border-b border-white/10 bg-slate-950/70 px-5 backdrop-blur-xl md:px-8">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-600 shadow-lg shadow-indigo-500/30">
-                <span className="text-lg font-bold">M</span>
-              </div>
-
-              <div>
-                <h2 className="text-xl font-extrabold">
-                  <span className="bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
-                    MeetNova
-                  </span>
-                </h2>
-
-                <p className="hidden text-[9px] tracking-[0.2em] text-slate-500 sm:block">
-                  VIDEO CONFERENCE
-                </p>
-              </div>
-            </div>
+            <Logo size="sm" subtitle="VIDEO CONFERENCE" />
 
             {/* Meeting title */}
 

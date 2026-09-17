@@ -4,8 +4,6 @@ const User = require("../models/User");
 
 const authMiddleware = async (req, res, next) => {
   try {
-    // Token can come from Authorization header ("Bearer <token>")
-    // or later from an HttpOnly cookie (step 5) — check both
     const authHeader = req.headers.authorization;
     const bearerToken = authHeader?.startsWith("Bearer ")
       ? authHeader.split(" ")[1]

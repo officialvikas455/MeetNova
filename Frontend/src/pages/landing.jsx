@@ -8,6 +8,8 @@ import GroupsIcon from "@mui/icons-material/Groups";
 import SecurityIcon from "@mui/icons-material/Security";
 import BoltIcon from "@mui/icons-material/Bolt";
 
+import Logo from "../components/Logo.jsx";
+
 export default function LandingPage() {
   const router = useNavigate();
 
@@ -16,16 +18,7 @@ export default function LandingPage() {
       {/* ================= NAVBAR ================= */}
 
       <nav className="landingNavbar">
-        <div className="navHeader">
-          <div className="brandIcon">
-            <VideoCallIcon />
-          </div>
-
-          <div>
-            <h2>MeetNova</h2>
-            <span>Connect • Collaborate • Create</span>
-          </div>
-        </div>
+        <Logo to="/" subtitle="Connect • Collaborate • Create" />
 
         <div className="navlist">
           <p onClick={() => router("/dfjkikdf")}>Join as Guest</p>

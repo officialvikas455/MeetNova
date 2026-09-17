@@ -10,6 +10,7 @@ import HistoryIcon from "@mui/icons-material/History";
 import SecurityIcon from "@mui/icons-material/Security";
 
 import { IconButton } from "@mui/material";
+import Logo from "../components/Logo.jsx";
 
 export default function History() {
   const { getHistoryOfUser } = useContext(AuthContext);
@@ -80,25 +81,7 @@ export default function History() {
       ===================================================== */}
       <nav className="relative z-20 flex h-[80px] items-center justify-between border-b border-white/10 bg-slate-950/60 px-5 backdrop-blur-xl md:px-10">
         {/* Logo */}
-        <div className="flex items-center gap-3">
-          <div className="relative flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-600 shadow-[0_0_25px_rgba(99,102,241,0.4)]">
-            <span className="text-xl font-bold text-white">M</span>
-
-            <span className="absolute -right-1 -top-1 h-3.5 w-3.5 rounded-full border-2 border-slate-950 bg-emerald-400 shadow-[0_0_10px_#34d399]" />
-          </div>
-
-          <div>
-            <h1 className="text-2xl font-extrabold tracking-tight">
-              <span className="bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-500 bg-clip-text text-transparent">
-                MeetNova
-              </span>
-            </h1>
-
-            <p className="hidden text-[9px] font-medium tracking-[0.22em] text-slate-500 sm:block">
-              CONNECT • MEET • GROW
-            </p>
-          </div>
-        </div>
+        <Logo to="/home" subtitle="CONNECT • MEET • GROW" />
 
         {/* Right side */}
         <div className="flex items-center gap-3">

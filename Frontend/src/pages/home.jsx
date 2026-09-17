@@ -13,6 +13,7 @@ import LogoutIcon from "@mui/icons-material/Logout";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 
 import { AuthContext } from "../contexts/AuthContext";
+import Logo from "../components/Logo.jsx";
 
 // eslint-disable-next-line react-refresh/only-export-components
 function HomeComponent() {
@@ -55,20 +56,7 @@ function HomeComponent() {
 
       <nav className="homeNavbar">
         {/* LEFT - LOGO */}
-
-        <div className="homeBrand">
-          <div className="homeBrandIcon">
-            <VideoCallIcon />
-
-            <span className="brandOnlineDot"></span>
-          </div>
-
-          <div className="homeBrandText">
-            <h2>MeetNova</h2>
-
-            <span>CONNECT • MEET • GROW</span>
-          </div>
-        </div>
+        <Logo to="/home" subtitle="CONNECT • MEET • GROW" />
 
         {/* RIGHT SIDE */}
 
