@@ -13,6 +13,9 @@ Frontend/.env
 Backend/.env
 frontend/.env
 backend/.env
+!.env.example
+!*.env.example
+!**/.env.example
 
 # Build outputs
 dist/
