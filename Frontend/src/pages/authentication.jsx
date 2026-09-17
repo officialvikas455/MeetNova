@@ -69,6 +69,7 @@ export default function Authentication() {
   const [username, setUsername] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [name, setName] = React.useState("");
+  const [email, setEmail] = React.useState("");
 
   const [error, setError] = React.useState("");
   const [message, setMessage] = React.useState("");
@@ -117,15 +118,16 @@ export default function Authentication() {
       }
 
       if (formState === 1) {
-        if (!name || !username || !password) {
-          setError("Please fill in all required fields.");
+        if (!name || !username || !password || !email) {
+          setError("Please fill in all required fields including your email address.");
           return;
         }
-        const result = await handleRegister(name, username, password);
+        const result = await handleRegister(name, username, password, email);
 
         setUsername("");
         setPassword("");
         setName("");
+        setEmail("");
 
         setMessage(result || "Registration successful! Please login.");
         setOpen(true);
@@ -173,6 +175,7 @@ export default function Authentication() {
     setError("");
     setPassword("");
     setConfirmPassword("");
+    setEmail("");
   };
 
   return (
@@ -698,11 +701,30 @@ export default function Authentication() {
                   />
                 )}
 
+                {formState === 1 && (
+                  <TextField
+                    margin="normal"
+                    required
+                    fullWidth
+                    label="Email Address"
+                    type="email"
+                    placeholder="example@gmail.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    sx={inputStyle}
+                  />
+                )}
+
                 <TextField
                   margin="normal"
                   required
                   fullWidth
-                  label="Username"
+                  label={formState === 1 ? "Username" : "Username or Email"}
+                  placeholder={
+                    formState === 1
+                      ? "Choose a unique username"
+                      : "Enter username or email"
+                  }
                   value={username}
                   autoFocus={formState === 0}
                   onChange={(e) => setUsername(e.target.value)}

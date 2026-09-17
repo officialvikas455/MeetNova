@@ -14,16 +14,20 @@ export const AuthProvider = ({ children }) => {
   const [userData, setUserData] = useState(null);
   const navigate = useNavigate();
 
-  const handleRegister = async (name, username, password) => {
+  const handleRegister = async (name, username, password, email) => {
     // eslint-disable-next-line no-useless-catch
     try {
       let request = await client.post("/register", {
         name,
         username,
         password,
+        email,
       });
 
-      if (request.status === HttpStatusCode.Created) {
+      if (
+        request.status === HttpStatusCode.Created ||
+        request.status === 201
+      ) {
         return request.data.message;
       }
     } catch (err) {

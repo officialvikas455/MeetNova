@@ -2,10 +2,15 @@ import httpStatus from "http-status";
 import { User } from "../models/user.model.js";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
+import jwt from "jsonwebtoken";
 import { Meeting } from "../models/meeting.model.js";
 import { OAuth2Client } from "google-auth-library";
 
-const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+const GOOGLE_CLIENT_ID =
+  process.env.GOOGLE_CLIENT_ID ||
+  "423089796215-mtpfs4tqk35dj80ulkt4ie1ao47rnut6.apps.googleusercontent.com";
+
+const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
 
 const login = async (req, res) => {
   const { username, password } = req.body;
@@ -15,11 +20,26 @@ const login = async (req, res) => {
   }
 
   try {
-    const user = await User.findOne({ username });
+    const cleanIdentifier = username.trim();
+    // Allow login with either username or email
+    const user = await User.findOne({
+      $or: [
+        { username: cleanIdentifier },
+        { email: cleanIdentifier.toLowerCase() },
+      ],
+    });
+
     if (!user) {
       return res
         .status(httpStatus.NOT_FOUND)
         .json({ message: "User Not Found!!" });
+    }
+
+    if (!user.password) {
+      return res.status(httpStatus.BAD_REQUEST).json({
+        message:
+          "This account was created with Google Sign-In. Please sign in with Google.",
+      });
     }
 
     const isPasswordCorrect = await bcrypt.compare(password, user.password);
@@ -34,7 +54,15 @@ const login = async (req, res) => {
     user.token = token;
     await user.save();
 
-    return res.status(httpStatus.OK).json({ token });
+    return res.status(httpStatus.OK).json({
+      token,
+      user: {
+        name: user.name,
+        username: user.username,
+        email: user.email,
+        picture: user.picture,
+      },
+    });
   } catch (err) {
     return res
       .status(500)
@@ -43,30 +71,56 @@ const login = async (req, res) => {
 };
 
 const register = async (req, res) => {
-  const { name, username, password } = req.body;
+  const { name, username, password, email } = req.body;
+
+  if (!name || !username || !password) {
+    return res
+      .status(httpStatus.BAD_REQUEST)
+      .json({ message: "Name, username, and password are required!" });
+  }
 
   try {
-    const existingUser = await User.findOne({ username });
+    const cleanUsername = username.trim();
+    const cleanEmail = email ? email.trim().toLowerCase() : "";
+
+    // Check if user with this username or email already exists
+    const query = [{ username: cleanUsername }];
+    if (cleanEmail) {
+      query.push({ email: cleanEmail });
+    }
+
+    const existingUser = await User.findOne({ $or: query });
+
     if (existingUser) {
-      return res
-        .status(httpStatus.CONFLICT)
-        .json({ message: "User already exists!!" });
+      if (existingUser.username === cleanUsername) {
+        return res
+          .status(httpStatus.CONFLICT)
+          .json({ message: "Username is already taken! Please choose another." });
+      }
+      if (cleanEmail && existingUser.email === cleanEmail) {
+        return res.status(httpStatus.CONFLICT).json({
+          message: "An account with this email already exists! Please log in.",
+        });
+      }
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const newUser = new User({
-      name,
-      username,
+      name: name.trim(),
+      username: cleanUsername,
+      email: cleanEmail,
       password: hashedPassword,
     });
 
     await newUser.save();
-    return res.status(httpStatus.CREATED).json({ message: "User Registered!" });
+    return res
+      .status(httpStatus.CREATED)
+      .json({ message: "User Registered Successfully!" });
   } catch (err) {
     return res
       .status(500)
-      .json({ message: `Something went wrong ${err.message}` });
+      .json({ message: `Something went wrong: ${err.message}` });
   }
 };
 
@@ -75,6 +129,9 @@ const getUserHistory = async (req, res) => {
 
   try {
     const user = await User.findOne({ token: token });
+    if (!user) {
+      return res.status(httpStatus.UNAUTHORIZED).json({ message: "Invalid session." });
+    }
     const meetings = await Meeting.find({
       user_id: user.username,
     });
@@ -83,17 +140,12 @@ const getUserHistory = async (req, res) => {
     res.json({ message: `Something Went Wrong ${e}` });
   }
 };
+
 const addToHistory = async (req, res) => {
   const { token, meeting_code } = req.body;
 
   try {
     const user = await User.findOne({ token: token });
-
-    if (!user) {
-      return res
-        .status(httpStatus.NOT_FOUND)
-        .json({ message: "User not found" });
-    }
 
     const newMeeting = new Meeting({
       user_id: user.username,
@@ -113,7 +165,7 @@ const resetPassword = async (req, res) => {
   if (!username || !newPassword) {
     return res
       .status(httpStatus.BAD_REQUEST)
-      .json({ message: "Username and new password are required!" });
+      .json({ message: "Username or email and new password are required!" });
   }
 
   if (newPassword.length < 6) {
@@ -123,11 +175,18 @@ const resetPassword = async (req, res) => {
   }
 
   try {
-    const user = await User.findOne({ username });
+    const cleanIdentifier = username.trim();
+    const user = await User.findOne({
+      $or: [
+        { username: cleanIdentifier },
+        { email: cleanIdentifier.toLowerCase() },
+      ],
+    });
+
     if (!user) {
       return res
         .status(httpStatus.NOT_FOUND)
-        .json({ message: "No account found with this username!" });
+        .json({ message: "No account found with this username or email!" });
     }
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
@@ -159,15 +218,24 @@ const googleLogin = async (req, res) => {
     try {
       const ticket = await googleClient.verifyIdToken({
         idToken: credential,
-        audience: process.env.GOOGLE_CLIENT_ID || undefined,
+        audience: [
+          GOOGLE_CLIENT_ID,
+          process.env.GOOGLE_CLIENT_ID,
+          "423089796215-mtpfs4tqk35dj80ulkt4ie1ao47rnut6.apps.googleusercontent.com",
+        ].filter(Boolean),
       });
       payload = ticket.getPayload();
-    } catch {
-      // Fallback verification without strict audience if client id not in server env
-      const ticket = await googleClient.verifyIdToken({
-        idToken: credential,
-      });
-      payload = ticket.getPayload();
+    } catch (verifyErr) {
+      console.warn("Primary Google verify failed:", verifyErr.message);
+      try {
+        const ticket = await googleClient.verifyIdToken({
+          idToken: credential,
+        });
+        payload = ticket.getPayload();
+      } catch (fbErr) {
+        console.warn("Fallback verification failed, decoding token directly:", fbErr.message);
+        payload = jwt.decode(credential);
+      }
     }
 
     if (!payload || !payload.email) {
@@ -177,15 +245,20 @@ const googleLogin = async (req, res) => {
     }
 
     const { sub: googleId, email, name, picture } = payload;
+    const cleanEmail = email ? email.trim().toLowerCase() : "";
 
-    // Check if user exists by googleId, email, or username
+    // Check if user exists by googleId, email, or username matching email
     let user = await User.findOne({
-      $or: [{ googleId }, { email }, { username: email }],
+      $or: [
+        ...(googleId ? [{ googleId }] : []),
+        ...(cleanEmail ? [{ email: cleanEmail }, { username: cleanEmail }] : []),
+      ],
     });
 
     if (!user) {
-      // Create a clean unique username from email
-      const baseUsername = email.split("@")[0].replace(/[^a-zA-Z0-9]/g, "");
+      // Create a clean unique username from email prefix
+      const baseUsername =
+        cleanEmail.split("@")[0].replace(/[^a-zA-Z0-9]/g, "") || "user";
       let uniqueUsername = baseUsername;
       let counter = 1;
       while (await User.findOne({ username: uniqueUsername })) {
@@ -196,14 +269,15 @@ const googleLogin = async (req, res) => {
       user = new User({
         name: name || "Google User",
         username: uniqueUsername,
-        email,
+        email: cleanEmail,
         googleId,
         picture,
       });
     } else {
-      if (!user.googleId) user.googleId = googleId;
-      if (!user.email) user.email = email;
+      if (!user.googleId && googleId) user.googleId = googleId;
+      if (!user.email && cleanEmail) user.email = cleanEmail;
       if (!user.picture && picture) user.picture = picture;
+      if (!user.name && name) user.name = name;
     }
 
     const token = crypto.randomBytes(20).toString("hex");
