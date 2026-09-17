@@ -160,11 +160,17 @@ export default function Authentication() {
         setFormState(0);
       }
     } catch (err) {
-      console.log(err);
+      console.log("Authentication action error:", err);
 
-      const msg =
-        err?.response?.data?.message ||
-        "Something went wrong. Please try again.";
+      let msg = "Something went wrong. Please try again.";
+      if (err?.response?.status === 404) {
+        msg =
+          "Backend deployment is pending on Render. The /reset_password route is not live yet. Please click 'Manual Deploy' on Render.";
+      } else if (err?.response?.data?.message) {
+        msg = err.response.data.message;
+      } else if (err?.message) {
+        msg = err.message;
+      }
 
       setError(msg);
     }

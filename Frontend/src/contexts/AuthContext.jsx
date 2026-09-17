@@ -94,8 +94,8 @@ export const AuthProvider = ({ children }) => {
         newPassword,
       });
 
-      if (response.status === HttpStatusCode.Ok) {
-        return response.data.message;
+      if (response.status === HttpStatusCode.Ok || response.status === 200) {
+        return response.data?.message || "Password reset successfully! Please log in.";
       }
     } catch (err) {
       throw err;
