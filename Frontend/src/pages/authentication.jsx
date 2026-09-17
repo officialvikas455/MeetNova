@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Avatar,
   Box,
@@ -84,6 +85,13 @@ export default function Authentication() {
     handleResetPassword,
     handleGoogleAuth,
   } = React.useContext(AuthContext);
+  const navigate = useNavigate();
+
+  React.useEffect(() => {
+    if (localStorage.getItem("token")) {
+      navigate("/home");
+    }
+  }, [navigate]);
 
   const googleClientId =
     import.meta.env.VITE_GOOGLE_CLIENT_ID ||
@@ -595,8 +603,10 @@ export default function Authentication() {
                                 await handleGoogleAuth(
                                   credentialResponse.credential
                                 );
+                                navigate("/home");
                               }
                             } catch (err) {
+                              console.error("Google authentication error:", err);
                               setError(
                                 err?.response?.data?.message ||
                                   "Google authentication failed. Please try again."

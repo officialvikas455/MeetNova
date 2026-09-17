@@ -105,7 +105,7 @@ export const AuthProvider = ({ children }) => {
         credential,
       });
 
-      if (response.status === HttpStatusCode.Ok) {
+      if (response.status === 200 || response.status === HttpStatusCode.Ok) {
         localStorage.setItem("token", response.data.token);
         setUserData(response.data.user);
         navigate("/home");
