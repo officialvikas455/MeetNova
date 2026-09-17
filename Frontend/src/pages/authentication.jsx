@@ -30,6 +30,7 @@ import {
 import { AuthContext } from "../contexts/AuthContext";
 import Logo from "../components/Logo.jsx";
 import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
+import { GOOGLE_CLIENT_ID } from "../environment";
 
 const GoogleIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24">
@@ -84,7 +85,10 @@ export default function Authentication() {
     handleGoogleAuth,
   } = React.useContext(AuthContext);
 
-  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
+  const googleClientId =
+    import.meta.env.VITE_GOOGLE_CLIENT_ID ||
+    GOOGLE_CLIENT_ID ||
+    "423089796215-mtpfs4tqk35dj80ulkt4ie1ao47rnut6.apps.googleusercontent.com";
 
   const handleMissingGoogleConfig = () => {
     setError(
