@@ -305,7 +305,11 @@ function HomeComponent() {
               </div>
             </div>
 
-            <img src="/images/logo3.png" alt="MeetNova video conference" />
+            <img
+              src="/images/home-conference.png"
+              alt="MeetNova Interactive Video Conference"
+              loading="eager"
+            />
           </div>
 
           {/* FLOATING CARD */}
