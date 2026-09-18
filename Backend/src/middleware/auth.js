@@ -1,6 +1,6 @@
 // middleware/auth.js
-const jwt = require("jsonwebtoken");
-const User = require("../models/User");
+import jwt from "jsonwebtoken";
+import { User } from "../models/user.model.js";
 
 const authMiddleware = async (req, res, next) => {
   try {
@@ -14,7 +14,7 @@ const authMiddleware = async (req, res, next) => {
       return res.status(401).json({ message: "No token provided" });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || process.env.JWT_ACCESS_SECRET);
 
     // Attach the user to the request, minus sensitive fields
     const user = await User.findById(decoded.userId).select("-password");
@@ -32,4 +32,5 @@ const authMiddleware = async (req, res, next) => {
   }
 };
 
-module.exports = authMiddleware;
+export default authMiddleware;
+
