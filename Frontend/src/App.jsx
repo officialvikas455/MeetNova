@@ -14,9 +14,9 @@ import * as AuthContextJsx from "./contexts/AuthContext.jsx";
 
 const theme = createTheme({
   typography: {
-    fontFamily: "'PT Serif Caption', Georgia, serif",
+    fontFamily: "'Telex', sans-serif",
     allVariants: {
-      fontFamily: "'PT Serif Caption', Georgia, serif",
+      fontFamily: "'Telex', sans-serif",
     },
   },
 });

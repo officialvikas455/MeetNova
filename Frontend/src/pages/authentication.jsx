@@ -56,7 +56,10 @@ const GoogleIcon = () => (
 
 const defaultTheme = createTheme({
   typography: {
-    fontFamily: "Inter, Arial, sans-serif",
+    fontFamily: "'Telex', sans-serif",
+    allVariants: {
+      fontFamily: "'Telex', sans-serif",
+    },
   },
   palette: {
     primary: {

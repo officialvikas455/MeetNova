@@ -6,13 +6,13 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  font-family: 'PT Serif Caption', Georgia, serif;
+  font-family: 'Telex', sans-serif;
 }
 
 :root {
-  --sans: 'PT Serif Caption', Georgia, serif;
-  --heading: 'PT Serif Caption', Georgia, serif;
-  font-family: 'PT Serif Caption', Georgia, serif;
+  --sans: 'Telex', sans-serif;
+  --heading: 'Telex', sans-serif;
+  font-family: 'Telex', sans-serif;
 }
 
 body,
@@ -25,7 +25,7 @@ textarea,
 .MuiButton-root,
 .MuiInputBase-root,
 .MuiInputLabel-root {
-  font-family: 'PT Serif Caption', Georgia, serif !important;
+  font-family: 'Telex', sans-serif !important;
 }
 
 
