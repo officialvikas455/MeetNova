@@ -306,7 +306,7 @@ function HomeComponent() {
             </div>
 
             <img
-              src="/images/home-conference.png"
+              src="/images/logo3.png"
               alt="MeetNova Interactive Video Conference"
               loading="eager"
             />
