@@ -185,7 +185,6 @@ const resetPassword = async (req, res) => {
         { email: cleanIdentifier.toLowerCase() },
       ],
     });
-
     if (!user) {
       return res
         .status(httpStatus.NOT_FOUND)

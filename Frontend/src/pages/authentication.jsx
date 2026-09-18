@@ -193,8 +193,15 @@ export default function Authentication() {
         sx={{
           minHeight: "100vh",
           width: "100%",
-          background:
-            "radial-gradient(circle at 15% 20%, rgba(79,70,229,0.35), transparent 30%), radial-gradient(circle at 85% 80%, rgba(37,99,235,0.28), transparent 30%), #070b2b",
+          background: `
+            radial-gradient(circle at 15% 20%, rgba(79,70,229,0.38), transparent 35%),
+            radial-gradient(circle at 85% 80%, rgba(37,99,235,0.3), transparent 35%),
+            linear-gradient(180deg, rgba(5,8,31,0.78) 0%, rgba(7,11,43,0.88) 100%),
+            url("/images/cosmic-bg.jpg")
+          `,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundAttachment: "fixed",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -209,8 +216,10 @@ export default function Authentication() {
             minHeight: { xs: "100vh", md: "780px" },
             overflow: "hidden",
             borderRadius: { xs: 0, md: "28px" },
-            boxShadow: "0 30px 100px rgba(0,0,0,0.45)",
-            background: "#090d2f",
+            boxShadow: "0 30px 100px rgba(0,0,0,0.65), 0 0 40px rgba(99,102,241,0.15)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            backdropFilter: "blur(20px)",
+            background: "rgba(9,13,47,0.92)",
           }}
         >
           {/* ================= LEFT SIDE ================= */}
@@ -229,10 +238,10 @@ export default function Authentication() {
               backgroundImage: `
                 linear-gradient(
                   135deg,
-                  rgba(7,11,43,0.78),
-                  rgba(25,22,75,0.72)
+                  rgba(7,11,43,0.72),
+                  rgba(25,22,75,0.65)
                 ),
-                url("https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&w=1400&q=85")
+                url("/images/cosmic-bg.jpg")
               `,
 
               backgroundSize: "cover",

@@ -46,13 +46,26 @@ export default function History() {
   };
 
   return (
-    <div className="relative min-h-screen w-full overflow-hidden bg-[#020617] text-white">
+    <div
+      className="relative min-h-screen w-full overflow-hidden text-white"
+      style={{
+        background: `
+          radial-gradient(circle at 15% 20%, rgba(99, 102, 241, 0.28), transparent 38%),
+          radial-gradient(circle at 85% 75%, rgba(139, 92, 246, 0.22), transparent 38%),
+          linear-gradient(180deg, rgba(5, 8, 31, 0.82) 0%, rgba(7, 11, 43, 0.92) 100%),
+          url("/images/cosmic-bg.jpg")
+        `,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundAttachment: "fixed",
+      }}
+    >
       {/* =====================================================
           BACKGROUND
       ===================================================== */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         {/* Purple glow */}
-        <div className="absolute -right-40 -top-40 h-[550px] w-[550px] rounded-full bg-purple-700/20 blur-[130px]" />
+        <div className="absolute -right-40 -top-40 h-[550px] w-[550px] rounded-full bg-purple-700/25 blur-[130px]" />
 
         {/* Blue glow */}
         <div className="absolute -bottom-60 -left-40 h-[600px] w-[600px] rounded-full bg-blue-700/15 blur-[130px]" />

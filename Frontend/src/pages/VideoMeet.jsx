@@ -817,7 +817,20 @@ export default function VideoMeetComponent() {
            LOBBY SCREEN
         ===================================================== */
 
-        <div className="relative min-h-screen w-full overflow-hidden bg-[#020617]">
+        <div
+          className="relative min-h-screen w-full overflow-hidden"
+          style={{
+            background: `
+              radial-gradient(circle at 15% 20%, rgba(99, 102, 241, 0.28), transparent 38%),
+              radial-gradient(circle at 85% 75%, rgba(139, 92, 246, 0.24), transparent 38%),
+              linear-gradient(180deg, rgba(5, 8, 31, 0.85) 0%, rgba(7, 11, 43, 0.92) 100%),
+              url("/images/cosmic-bg.jpg")
+            `,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            backgroundAttachment: "fixed",
+          }}
+        >
           {/* ================= BACKGROUND ================= */}
 
           <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -1107,7 +1120,20 @@ export default function VideoMeetComponent() {
            ACTIVE MEETING
         ===================================================== */
 
-        <div className="relative min-h-screen w-full overflow-hidden bg-[#020617]">
+        <div
+          className="relative min-h-screen w-full overflow-hidden"
+          style={{
+            background: `
+              radial-gradient(circle at 15% 20%, rgba(99, 102, 241, 0.15), transparent 45%),
+              radial-gradient(circle at 85% 75%, rgba(139, 92, 246, 0.12), transparent 45%),
+              linear-gradient(180deg, rgba(5, 8, 31, 0.92) 0%, rgba(2, 6, 23, 0.96) 100%),
+              url("/images/cosmic-bg.jpg")
+            `,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            backgroundAttachment: "fixed",
+          }}
+        >
           {/* ================= BACKGROUND ================= */}
 
           <div className="pointer-events-none absolute inset-0 overflow-hidden">
