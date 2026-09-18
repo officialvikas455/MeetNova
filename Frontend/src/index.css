@@ -1,9 +1,33 @@
 @import "tailwindcss";
-*{
+
+*,
+*::before,
+*::after {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  font-family: 'PT Serif Caption', Georgia, serif;
 }
+
+:root {
+  --sans: 'PT Serif Caption', Georgia, serif;
+  --heading: 'PT Serif Caption', Georgia, serif;
+  font-family: 'PT Serif Caption', Georgia, serif;
+}
+
+body,
+button,
+input,
+optgroup,
+select,
+textarea,
+.MuiTypography-root,
+.MuiButton-root,
+.MuiInputBase-root,
+.MuiInputLabel-root {
+  font-family: 'PT Serif Caption', Georgia, serif !important;
+}
+
 
 /* :root {
   --text: #6b6375;

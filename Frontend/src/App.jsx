@@ -1,5 +1,6 @@
 
 import { Route, Routes, BrowserRouter as Router } from "react-router-dom";
+import { createTheme, ThemeProvider } from "@mui/material/styles";
 
 import LandingPage from "./pages/landing.jsx";
 import Authentication from "./pages/authentication.jsx";
@@ -11,23 +12,34 @@ import "./App.css";
 
 import * as AuthContextJsx from "./contexts/AuthContext.jsx";
 
+const theme = createTheme({
+  typography: {
+    fontFamily: "'PT Serif Caption', Georgia, serif",
+    allVariants: {
+      fontFamily: "'PT Serif Caption', Georgia, serif",
+    },
+  },
+});
+
 function App() {
   return (
-    <div className="App">
-      <Router>
-        <AuthContextJsx.AuthProvider>
-          <Routes>
-            <Route path="/" element={<LandingPage />} />
+    <ThemeProvider theme={theme}>
+      <div className="App">
+        <Router>
+          <AuthContextJsx.AuthProvider>
+            <Routes>
+              <Route path="/" element={<LandingPage />} />
 
-            <Route path="/auth" element={<Authentication />} />
-            <Route path="/home" element={<HomeComponent/>}></Route>
-            <Route path="/history" element={<History/>}></Route>
+              <Route path="/auth" element={<Authentication />} />
+              <Route path="/home" element={<HomeComponent />}></Route>
+              <Route path="/history" element={<History />}></Route>
 
-            <Route path="/:url" element={<VideoMeetComponent />} />
-          </Routes>
-        </AuthContextJsx.AuthProvider>
-      </Router>
-    </div>
+              <Route path="/:url" element={<VideoMeetComponent />} />
+            </Routes>
+          </AuthContextJsx.AuthProvider>
+        </Router>
+      </div>
+    </ThemeProvider>
   );
 }
 
