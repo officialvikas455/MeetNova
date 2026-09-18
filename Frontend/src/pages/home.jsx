@@ -65,7 +65,8 @@ function HomeComponent() {
 
           <div className="homeOnline">
             <span></span>
-            Online
+            <SecurityIcon fontSize="inherit" style={{ fontSize: "14px" }} />
+            <span>Server Online</span>
           </div>
 
           {/* HISTORY */}
@@ -297,6 +298,11 @@ function HomeComponent() {
                 <span></span>
                 <span></span>
                 <span></span>
+              </div>
+
+              <div className="serverChip">
+                <SecurityIcon fontSize="inherit" style={{ fontSize: "13px" }} />
+                <span>Server Connected</span>
               </div>
 
               <div className="liveIndicator">

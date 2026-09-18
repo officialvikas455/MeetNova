@@ -2395,6 +2395,24 @@ body {
   box-shadow: 0 0 8px rgba(39, 201, 63, 0.5);
 }
 
+.serverChip {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  background: rgba(99, 102, 241, 0.18);
+  border: 1px solid rgba(129, 140, 248, 0.3);
+  color: #c7d2fe;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.serverChip svg {
+  color: #818cf8;
+}
+
 .liveIndicator {
   display: flex;
 
