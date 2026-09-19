@@ -267,7 +267,8 @@ export default function VideoMeetComponent() {
   const [videoEffect, setVideoEffect] = useState("none");
   const [virtualBg, setVirtualBg] = useState("none");
   const [showEffectsModal, setShowEffectsModal] = useState(false);
-  const [layoutMode, setLayoutMode] = useState("grid"); // "grid" | "speaker"
+  const [layoutMode, setLayoutMode] = useState("speaker"); // "speaker" (Zoom style: big user, small self) | "grid" (Gallery)
+  const [isSelfViewMinimized, setIsSelfViewMinimized] = useState(false);
   const [pinnedParticipant, setPinnedParticipant] = useState(null);
   const [participantNames, setParticipantNames] = useState({});
   const [elapsedTime, setElapsedTime] = useState(0);
@@ -1657,30 +1658,36 @@ export default function VideoMeetComponent() {
                 <span className="hidden sm:inline">Online</span>
               </div>
 
-              {/* Layout Switcher (Grid vs Speaker View) */}
+              {/* Layout Switcher (Speaker vs Gallery View) */}
               <Tooltip
                 title={
-                  layoutMode === "grid"
-                    ? "Switch to Speaker View"
-                    : "Switch to Grid View"
+                  layoutMode === "speaker"
+                    ? "Switch to Gallery Grid View"
+                    : "Switch to Zoom Speaker View"
                 }
               >
                 <button
                   onClick={() =>
                     setLayoutMode((prev) =>
-                      prev === "grid" ? "speaker" : "grid"
+                      prev === "speaker" ? "grid" : "speaker"
                     )
                   }
-                  className={`flex h-8 w-8 items-center justify-center rounded-lg border transition ${
+                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-medium transition ${
                     layoutMode === "speaker"
-                      ? "border-indigo-500/50 bg-indigo-500/25 text-indigo-300"
-                      : "border-white/10 bg-white/[0.04] text-slate-300 hover:bg-white/10"
+                      ? "border-indigo-500/50 bg-indigo-500/25 text-indigo-200 shadow-[0_0_10px_rgba(99,102,241,0.25)]"
+                      : "border-white/10 bg-white/[0.04] text-slate-300 hover:bg-white/10 hover:text-white"
                   }`}
                 >
-                  {layoutMode === "grid" ? (
-                    <ViewSidebarIcon sx={{ fontSize: 17 }} />
+                  {layoutMode === "speaker" ? (
+                    <>
+                      <GridViewIcon sx={{ fontSize: 15 }} />
+                      <span className="hidden sm:inline">Gallery</span>
+                    </>
                   ) : (
-                    <GridViewIcon sx={{ fontSize: 17 }} />
+                    <>
+                      <ViewSidebarIcon sx={{ fontSize: 15 }} />
+                      <span className="hidden sm:inline">Speaker</span>
+                    </>
                   )}
                 </button>
               </Tooltip>
@@ -1853,153 +1860,356 @@ export default function VideoMeetComponent() {
                     </div>
                   </div>
                 ) : (
-                  /* ---------------- SCENARIO 2: MULTIPLE PARTICIPANTS (GRID & SPEAKER) ---------------- */
-                  <div
-                    className={`h-full w-full ${
-                      layoutMode === "grid"
-                        ? `grid gap-3.5 ${
-                            videos.length === 1
-                              ? "grid-cols-1 md:grid-cols-2"
-                              : videos.length <= 3
-                              ? "grid-cols-1 sm:grid-cols-2"
-                              : "grid-cols-2 lg:grid-cols-3"
-                          }`
-                        : "flex flex-col gap-3"
-                    }`}
-                  >
-                    {/* 1. Local User Video Tile */}
-                    <div
-                      className={`relative min-h-[180px] overflow-hidden rounded-[20px] border transition-all duration-200 shadow-lg ${
-                        layoutMode === "speaker"
-                          ? "h-[180px] w-[260px] flex-shrink-0"
-                          : "h-full w-full"
-                      } ${
-                        audio && audioLevel > 15
-                          ? "border-emerald-400 shadow-[0_0_20px_rgba(52,211,153,0.35)]"
-                          : "border-white/15 bg-slate-950"
-                      }`}
-                      style={{
-                        background:
-                          virtualBg !== "none"
-                            ? VIRTUAL_BACKGROUNDS[virtualBg]?.backdrop
-                            : "#020617",
-                      }}
-                    >
-                      <video
-                        ref={localVideoref}
-                        autoPlay
-                        muted
-                        playsInline
-                        className={`h-full w-full object-cover transition-opacity duration-300 ${
-                          video && videoAvailable
-                            ? "opacity-100"
-                            : "opacity-0 pointer-events-none"
-                        }`}
-                        style={{
-                          filter: VIDEO_EFFECTS[videoEffect]?.filter || "none",
-                        }}
-                      />
+                  /* ---------------- SCENARIO 2: LIVE CONFERENCING (ZOOM STYLE) ---------------- */
+                  layoutMode === "speaker" ? (
+                    /* ================= ZOOM SPEAKER VIEW (USER LOOKS BIG, MY STREAM SMALL) ================= */
+                    <div className="relative h-full w-full flex flex-col items-center justify-center overflow-hidden">
+                      {(() => {
+                        const activeSpeaker =
+                          (pinnedParticipant &&
+                            videos.find((v) => v.socketId === pinnedParticipant)) ||
+                          videos[0];
+                        const otherParticipants = videos.filter(
+                          (v) => v.socketId !== activeSpeaker?.socketId
+                        );
+                        const peerDisplayName = activeSpeaker
+                          ? participantNames[activeSpeaker.socketId] || "Participant"
+                          : "Participant";
+                        const isPinned =
+                          pinnedParticipant === activeSpeaker?.socketId;
 
-                      {/* Camera Off Avatar */}
-                      {(!video || !videoAvailable) && (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-slate-950/95 via-slate-900/90 to-slate-950/95 backdrop-blur-md">
-                          <div
-                            className="flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-full text-2xl sm:text-3xl font-extrabold text-white shadow-xl"
-                            style={{
-                              background:
-                                "radial-gradient(circle at 35% 35%, #a855f7, #6366f1 65%, #1e1b4b 100%)",
-                            }}
-                          >
-                            {(username.trim()[0] || "Y").toUpperCase()}
-                          </div>
-                        </div>
-                      )}
+                        return (
+                          <div className="relative h-full w-full flex flex-col items-center justify-center overflow-hidden">
+                            {/* Top Strip of other participants (if > 1 other participant) */}
+                            {otherParticipants.length > 0 && (
+                              <div className="absolute top-3 left-3 z-20 flex items-center gap-2 overflow-x-auto max-w-[calc(100%-180px)] sm:max-w-[calc(100%-280px)] rounded-2xl bg-black/60 p-1.5 backdrop-blur-xl border border-white/15 shadow-xl">
+                                {otherParticipants.map((peer, idx) => {
+                                  const name =
+                                    participantNames[peer.socketId] ||
+                                    `User ${idx + 1}`;
+                                  return (
+                                    <button
+                                      key={peer.socketId}
+                                      onClick={() =>
+                                        setPinnedParticipant(peer.socketId)
+                                      }
+                                      className="group relative h-[60px] sm:h-[72px] aspect-video flex-shrink-0 overflow-hidden rounded-xl border border-white/20 bg-slate-900 transition hover:border-indigo-400 hover:scale-105"
+                                      title={`Click to view ${name} in main stage`}
+                                    >
+                                      <video
+                                        data-socket={peer.socketId}
+                                        ref={(ref) => {
+                                          if (ref && peer.stream) {
+                                            ref.srcObject = peer.stream;
+                                          }
+                                        }}
+                                        autoPlay
+                                        playsInline
+                                        className="h-full w-full object-cover"
+                                      />
+                                      <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-transparent opacity-85" />
+                                      <span className="absolute bottom-1 left-1.5 max-w-[90%] truncate text-[9px] font-semibold text-white">
+                                        {name}
+                                      </span>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            )}
 
-                      {/* Participant Name Badge */}
-                      <div className="absolute bottom-2.5 left-2.5 z-20 flex items-center gap-2 rounded-full border border-white/15 bg-black/70 px-3 py-1 text-xs font-semibold backdrop-blur-xl text-white">
-                        {audio ? (
-                          <MicIcon sx={{ fontSize: 13, color: "#34d399" }} />
-                        ) : (
-                          <MicOffIcon sx={{ fontSize: 13, color: "#fb7185" }} />
-                        )}
-                        <span className="max-w-[120px] truncate">
-                          {username.trim() || "You"} (You)
-                        </span>
-                      </div>
-                    </div>
+                            {/* BIG REMOTE PARTICIPANT (MAIN STAGE) */}
+                            <div className="relative h-full w-full overflow-hidden rounded-[24px] border border-white/15 bg-slate-950 shadow-2xl flex items-center justify-center">
+                              {activeSpeaker && (
+                                <>
+                                  <video
+                                    data-socket={activeSpeaker.socketId}
+                                    ref={(ref) => {
+                                      if (ref && activeSpeaker.stream) {
+                                        ref.srcObject = activeSpeaker.stream;
+                                      }
+                                    }}
+                                    autoPlay
+                                    playsInline
+                                    className="h-full w-full object-cover"
+                                  />
 
-                    {/* 2. Remote Participants Video Tiles */}
-                    {videos.map((remotePeer, idx) => {
-                      const peerDisplayName =
-                        participantNames[remotePeer.socketId] ||
-                        `Participant ${idx + 1}`;
-                      const isPinned =
-                        pinnedParticipant === remotePeer.socketId;
+                                  {/* Fallback Cosmic Avatar if stream is blank */}
+                                  <div className="pointer-events-none absolute inset-0 -z-10 flex flex-col items-center justify-center bg-slate-900">
+                                    <div className="flex h-24 w-24 sm:h-28 sm:w-28 items-center justify-center rounded-full bg-gradient-to-tr from-indigo-500 via-purple-600 to-pink-500 text-3xl sm:text-4xl font-extrabold text-white shadow-2xl">
+                                      {(peerDisplayName[0] || "P").toUpperCase()}
+                                    </div>
+                                    <span className="mt-3 text-sm font-medium text-slate-300">
+                                      {peerDisplayName}
+                                    </span>
+                                  </div>
 
-                      return (
-                        <div
-                          key={remotePeer.socketId}
-                          className={`relative min-h-[180px] overflow-hidden rounded-[20px] border border-white/15 bg-slate-950 shadow-lg ${
-                            layoutMode === "speaker" && !isPinned
-                              ? "h-[180px] w-[260px] flex-shrink-0"
-                              : "h-full w-full"
-                          }`}
-                        >
-                          <video
-                            data-socket={remotePeer.socketId}
-                            ref={(ref) => {
-                              if (ref && remotePeer.stream) {
-                                ref.srcObject = remotePeer.stream;
-                              }
-                            }}
-                            autoPlay
-                            playsInline
-                            className="h-full w-full object-cover"
-                          />
+                                  {/* Speaker Name Tag (Bottom-Left) */}
+                                  <div className="absolute bottom-3.5 left-3.5 z-20 flex items-center gap-2 rounded-full border border-white/20 bg-black/75 px-3.5 py-1.5 backdrop-blur-xl shadow-xl">
+                                    <MicIcon sx={{ fontSize: 14, color: "#34d399" }} />
+                                    <span className="max-w-[150px] sm:max-w-[240px] truncate text-xs font-bold text-white">
+                                      {peerDisplayName}
+                                    </span>
+                                    {isPinned && (
+                                      <span className="rounded bg-amber-500/20 px-1.5 py-0.2 text-[9px] font-bold text-amber-300 border border-amber-500/30">
+                                        PINNED
+                                      </span>
+                                    )}
+                                  </div>
 
-                          {/* Fallback Cosmic Avatar if stream is black/empty */}
-                          <div className="pointer-events-none absolute inset-0 -z-10 flex flex-col items-center justify-center bg-slate-900">
-                            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-tr from-indigo-500 to-purple-600 text-2xl font-bold text-white">
-                              {peerDisplayName[0].toUpperCase()}
+                                  {/* Pin / Spotlight Action (Top-Right) */}
+                                  <button
+                                    onClick={() =>
+                                      setPinnedParticipant((prev) =>
+                                        prev === activeSpeaker.socketId
+                                          ? null
+                                          : activeSpeaker.socketId
+                                      )
+                                    }
+                                    className={`absolute right-3.5 top-3.5 z-20 flex h-8 w-8 items-center justify-center rounded-full border backdrop-blur-xl transition ${
+                                      isPinned
+                                        ? "border-amber-400 bg-amber-400/25 text-amber-300"
+                                        : "border-white/15 bg-black/60 text-white/80 hover:bg-white/20 hover:text-white"
+                                    }`}
+                                    title={isPinned ? "Unpin Speaker" : "Pin Speaker"}
+                                  >
+                                    {isPinned ? (
+                                      <PushPinIcon sx={{ fontSize: 16 }} />
+                                    ) : (
+                                      <PushPinOutlinedIcon sx={{ fontSize: 16 }} />
+                                    )}
+                                  </button>
+                                </>
+                              )}
+                            </div>
+
+                            {/* SMALL LOCAL STREAM (ZOOM PICTURE-IN-PICTURE TILE) */}
+                            <div
+                              className={`absolute top-3.5 right-3.5 z-30 transition-all duration-200 overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.85)] backdrop-blur-xl group ${
+                                isSelfViewMinimized
+                                  ? "h-9 rounded-full px-3 py-1 flex items-center gap-1.5 cursor-pointer bg-slate-900/90 border border-white/20 hover:border-white/40"
+                                  : "w-36 xs:w-44 sm:w-56 md:w-64 aspect-video rounded-2xl border hover:scale-[1.02]"
+                              } ${
+                                !isSelfViewMinimized && audio && audioLevel > 15
+                                  ? "border-emerald-400 shadow-[0_0_20px_rgba(52,211,153,0.35)]"
+                                  : "border-white/20 bg-slate-950"
+                              }`}
+                              style={{
+                                background:
+                                  !isSelfViewMinimized && virtualBg !== "none"
+                                    ? VIRTUAL_BACKGROUNDS[virtualBg]?.backdrop
+                                    : "#020617",
+                              }}
+                            >
+                              {isSelfViewMinimized ? (
+                                <button
+                                  onClick={() => setIsSelfViewMinimized(false)}
+                                  className="flex items-center gap-1.5 text-xs text-white"
+                                  title="Expand Self View"
+                                >
+                                  {audio ? (
+                                    <MicIcon sx={{ fontSize: 13, color: "#34d399" }} />
+                                  ) : (
+                                    <MicOffIcon sx={{ fontSize: 13, color: "#fb7185" }} />
+                                  )}
+                                  <span className="font-semibold">
+                                    {username.trim() || "You"} (You)
+                                  </span>
+                                  <span className="text-[10px] text-indigo-300 underline ml-1">
+                                    Expand
+                                  </span>
+                                </button>
+                              ) : (
+                                <>
+                                  <video
+                                    ref={(el) => {
+                                      localVideoref.current = el;
+                                      if (
+                                        el &&
+                                        window.localStream &&
+                                        el.srcObject !== window.localStream
+                                      ) {
+                                        el.srcObject = window.localStream;
+                                      }
+                                    }}
+                                    autoPlay
+                                    muted
+                                    playsInline
+                                    className={`h-full w-full object-cover transition-opacity duration-300 ${
+                                      video && videoAvailable
+                                        ? "opacity-100"
+                                        : "opacity-0 pointer-events-none"
+                                    }`}
+                                    style={{
+                                      filter: VIDEO_EFFECTS[videoEffect]?.filter || "none",
+                                    }}
+                                  />
+
+                                  {/* Camera Off Avatar in PiP */}
+                                  {(!video || !videoAvailable) && (
+                                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-slate-950/95 via-slate-900/90 to-slate-950/95 backdrop-blur-md">
+                                      <div
+                                        className="flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-full text-xl sm:text-2xl font-bold text-white shadow-lg"
+                                        style={{
+                                          background:
+                                            "radial-gradient(circle at 35% 35%, #a855f7, #6366f1 65%, #1e1b4b 100%)",
+                                        }}
+                                      >
+                                        {(username.trim()[0] || "Y").toUpperCase()}
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {/* PiP Name Tag */}
+                                  <div className="absolute bottom-2 left-2 z-20 flex items-center gap-1.5 rounded-full border border-white/15 bg-black/75 px-2.5 py-0.5 text-[11px] font-semibold text-white backdrop-blur-md">
+                                    {audio ? (
+                                      <MicIcon sx={{ fontSize: 12, color: "#34d399" }} />
+                                    ) : (
+                                      <MicOffIcon sx={{ fontSize: 12, color: "#fb7185" }} />
+                                    )}
+                                    <span className="max-w-[80px] sm:max-w-[100px] truncate">
+                                      {username.trim() || "You"} (You)
+                                    </span>
+                                  </div>
+
+                                  {/* Top-Right PiP Controls */}
+                                  <div className="absolute top-1.5 right-1.5 z-20 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition duration-150">
+                                    <button
+                                      onClick={() => setShowEffectsModal(true)}
+                                      className="flex h-6 w-6 items-center justify-center rounded-full bg-black/70 text-white border border-white/20 hover:bg-purple-600 transition"
+                                      title="Change Effect"
+                                    >
+                                      <AutoFixHighIcon sx={{ fontSize: 12 }} />
+                                    </button>
+                                    <button
+                                      onClick={() => setIsSelfViewMinimized(true)}
+                                      className="flex h-6 w-6 items-center justify-center rounded-full bg-black/70 text-white border border-white/20 hover:bg-slate-800 transition text-[11px] font-bold"
+                                      title="Minimize Self View"
+                                    >
+                                      —
+                                    </button>
+                                  </div>
+                                </>
+                              )}
                             </div>
                           </div>
+                        );
+                      })()}
+                    </div>
+                  ) : (
+                    /* ================= ZOOM GALLERY / GRID VIEW ================= */
+                    <div
+                      className={`h-full w-full grid gap-3.5 ${
+                        videos.length === 1
+                          ? "grid-cols-1 md:grid-cols-2"
+                          : videos.length <= 3
+                          ? "grid-cols-1 sm:grid-cols-2"
+                          : "grid-cols-2 lg:grid-cols-3"
+                      }`}
+                    >
+                      {/* Local User Tile */}
+                      <div
+                        className={`relative min-h-[180px] overflow-hidden rounded-[20px] border transition-all duration-200 shadow-lg h-full w-full ${
+                          audio && audioLevel > 15
+                            ? "border-emerald-400 shadow-[0_0_20px_rgba(52,211,153,0.35)]"
+                            : "border-white/15 bg-slate-950"
+                        }`}
+                        style={{
+                          background:
+                            virtualBg !== "none"
+                              ? VIRTUAL_BACKGROUNDS[virtualBg]?.backdrop
+                              : "#020617",
+                        }}
+                      >
+                        <video
+                          ref={(el) => {
+                            localVideoref.current = el;
+                            if (
+                              el &&
+                              window.localStream &&
+                              el.srcObject !== window.localStream
+                            ) {
+                              el.srcObject = window.localStream;
+                            }
+                          }}
+                          autoPlay
+                          muted
+                          playsInline
+                          className={`h-full w-full object-cover transition-opacity duration-300 ${
+                            video && videoAvailable
+                              ? "opacity-100"
+                              : "opacity-0 pointer-events-none"
+                          }`}
+                          style={{
+                            filter: VIDEO_EFFECTS[videoEffect]?.filter || "none",
+                          }}
+                        />
 
-                          {/* Participant Name Badge */}
-                          <div className="absolute bottom-2.5 left-2.5 z-20 flex items-center gap-2 rounded-full border border-white/15 bg-black/70 px-3 py-1 text-xs font-semibold backdrop-blur-xl text-white">
-                            <MicIcon sx={{ fontSize: 13, color: "#34d399" }} />
-                            <span className="max-w-[130px] sm:max-w-[180px] truncate">
-                              {peerDisplayName}
-                            </span>
+                        {(!video || !videoAvailable) && (
+                          <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-slate-950/95 via-slate-900/90 to-slate-950/95 backdrop-blur-md">
+                            <div
+                              className="flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-full text-2xl sm:text-3xl font-extrabold text-white shadow-xl"
+                              style={{
+                                background:
+                                  "radial-gradient(circle at 35% 35%, #a855f7, #6366f1 65%, #1e1b4b 100%)",
+                              }}
+                            >
+                              {(username.trim()[0] || "Y").toUpperCase()}
+                            </div>
                           </div>
+                        )}
 
-                          {/* Pin / Spotlight Action in Top-Right */}
-                          <button
-                            onClick={() =>
-                              setPinnedParticipant((prev) =>
-                                prev === remotePeer.socketId
-                                  ? null
-                                  : remotePeer.socketId
-                              )
-                            }
-                            className={`absolute right-2.5 top-2.5 z-20 flex h-7 w-7 items-center justify-center rounded-full border backdrop-blur-xl transition ${
-                              isPinned
-                                ? "border-amber-400 bg-amber-400/20 text-amber-300"
-                                : "border-white/15 bg-black/50 text-white/80 hover:bg-white/20"
-                            }`}
-                            title={
-                              isPinned ? "Unpin Participant" : "Pin Participant"
-                            }
-                          >
-                            {isPinned ? (
-                              <PushPinIcon sx={{ fontSize: 14 }} />
-                            ) : (
-                              <PushPinOutlinedIcon sx={{ fontSize: 14 }} />
-                            )}
-                          </button>
+                        <div className="absolute bottom-2.5 left-2.5 z-20 flex items-center gap-2 rounded-full border border-white/15 bg-black/70 px-3 py-1 text-xs font-semibold backdrop-blur-xl text-white">
+                          {audio ? (
+                            <MicIcon sx={{ fontSize: 13, color: "#34d399" }} />
+                          ) : (
+                            <MicOffIcon sx={{ fontSize: 13, color: "#fb7185" }} />
+                          )}
+                          <span className="max-w-[120px] truncate">
+                            {username.trim() || "You"} (You)
+                          </span>
                         </div>
-                      );
-                    })}
-                  </div>
+                      </div>
+
+                      {/* Remote Participants */}
+                      {videos.map((remotePeer, idx) => {
+                        const peerDisplayName =
+                          participantNames[remotePeer.socketId] ||
+                          `Participant ${idx + 1}`;
+
+                        return (
+                          <div
+                            key={remotePeer.socketId}
+                            className="relative min-h-[180px] overflow-hidden rounded-[20px] border border-white/15 bg-slate-950 shadow-lg h-full w-full"
+                          >
+                            <video
+                              data-socket={remotePeer.socketId}
+                              ref={(ref) => {
+                                if (ref && remotePeer.stream) {
+                                  ref.srcObject = remotePeer.stream;
+                                }
+                              }}
+                              autoPlay
+                              playsInline
+                              className="h-full w-full object-cover"
+                            />
+
+                            <div className="pointer-events-none absolute inset-0 -z-10 flex flex-col items-center justify-center bg-slate-900">
+                              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-tr from-indigo-500 to-purple-600 text-2xl font-bold text-white">
+                                {peerDisplayName[0].toUpperCase()}
+                              </div>
+                            </div>
+
+                            <div className="absolute bottom-2.5 left-2.5 z-20 flex items-center gap-2 rounded-full border border-white/15 bg-black/70 px-3 py-1 text-xs font-semibold backdrop-blur-xl text-white">
+                              <MicIcon sx={{ fontSize: 13, color: "#34d399" }} />
+                              <span className="max-w-[130px] sm:max-w-[180px] truncate">
+                                {peerDisplayName}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )
                 )}
               </div>
 
