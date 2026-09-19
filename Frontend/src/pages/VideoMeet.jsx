@@ -23,6 +23,16 @@ import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import CheckIcon from "@mui/icons-material/Check";
 import GraphicEqIcon from "@mui/icons-material/GraphicEq";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
+import AutoFixHighIcon from "@mui/icons-material/AutoFixHigh";
+import SendIcon from "@mui/icons-material/Send";
+import CloseIcon from "@mui/icons-material/Close";
+import GridViewIcon from "@mui/icons-material/GridView";
+import ViewSidebarIcon from "@mui/icons-material/ViewSidebar";
+import LockIcon from "@mui/icons-material/Lock";
+import AccessTimeIcon from "@mui/icons-material/AccessTime";
+import PushPinIcon from "@mui/icons-material/PushPin";
+import PushPinOutlinedIcon from "@mui/icons-material/PushPinOutlined";
+import EmojiEmotionsIcon from "@mui/icons-material/EmojiEmotions";
 
 import server from "../environment";
 import Logo from "../components/Logo.jsx";
@@ -38,6 +48,105 @@ const peerConfigConnections = {
       urls: "stun:stun.l.google.com:19302",
     },
   ],
+};
+
+/* =====================================================
+   VIDEO EFFECTS & VIRTUAL BACKGROUND PRESETS
+===================================================== */
+
+const VIDEO_EFFECTS = {
+  none: {
+    name: "Natural",
+    filter: "none",
+    icon: "📷",
+    desc: "Clean camera feed",
+  },
+  "blur-soft": {
+    name: "Soft Blur",
+    filter: "blur(5px)",
+    icon: "✨",
+    desc: "Subtle cinematic focus",
+  },
+  "blur-deep": {
+    name: "Deep Blur",
+    filter: "blur(12px)",
+    icon: "🌫️",
+    desc: "Maximum privacy blur",
+  },
+  studio: {
+    name: "Studio Pro",
+    filter: "brightness(1.08) contrast(1.12) saturate(1.16)",
+    icon: "💡",
+    desc: "Ring-light glow",
+  },
+  cosmic: {
+    name: "Cosmic Glow",
+    filter: "hue-rotate(215deg) saturate(1.35) contrast(1.15)",
+    icon: "🌌",
+    desc: "Deep celestial space",
+  },
+  sunset: {
+    name: "Sunset Dusk",
+    filter: "sepia(0.26) saturate(1.38) contrast(1.08)",
+    icon: "🌅",
+    desc: "Golden hour ambiance",
+  },
+  cyber: {
+    name: "Cyber Neon",
+    filter: "hue-rotate(280deg) saturate(1.4) contrast(1.2)",
+    icon: "🔮",
+    desc: "Vibrant synthwave",
+  },
+  noir: {
+    name: "Cinema Noir",
+    filter: "grayscale(1) contrast(1.28) brightness(0.95)",
+    icon: "🎬",
+    desc: "Monochrome film",
+  },
+};
+
+const VIRTUAL_BACKGROUNDS = {
+  none: {
+    name: "None",
+    icon: "🚫",
+    preview: "from-slate-800 to-slate-900",
+    backdrop: "transparent",
+  },
+  office: {
+    name: "Executive Office",
+    icon: "🏢",
+    preview: "from-slate-900 via-indigo-950 to-slate-900",
+    backdrop:
+      "linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(30, 27, 75, 0.92)), radial-gradient(circle at top right, #38bdf8, transparent 40%)",
+  },
+  galaxy: {
+    name: "Cosmic Galaxy",
+    icon: "🌌",
+    preview: "from-purple-950 via-indigo-950 to-black",
+    backdrop:
+      "radial-gradient(circle at 20% 30%, rgba(168, 85, 247, 0.4), transparent 50%), radial-gradient(circle at 80% 70%, rgba(59, 130, 246, 0.35), transparent 50%), #05081c",
+  },
+  library: {
+    name: "Luxury Library",
+    icon: "📚",
+    preview: "from-amber-950 via-stone-900 to-black",
+    backdrop:
+      "linear-gradient(135deg, rgba(69, 26, 3, 0.85), rgba(28, 25, 23, 0.95)), #0c0a09",
+  },
+  cyberpunk: {
+    name: "Cyberpunk Loft",
+    icon: "🏙️",
+    preview: "from-fuchsia-950 via-cyan-950 to-slate-950",
+    backdrop:
+      "radial-gradient(circle at 10% 20%, rgba(236, 72, 153, 0.4), transparent 45%), radial-gradient(circle at 90% 80%, rgba(6, 182, 212, 0.4), transparent 45%), #030712",
+  },
+  studio: {
+    name: "Minimal Studio",
+    icon: "🎙️",
+    preview: "from-slate-900 to-zinc-950",
+    backdrop:
+      "radial-gradient(circle at center, rgba(99, 102, 241, 0.25), transparent 65%), #090d16",
+  },
 };
 
 export default function VideoMeetComponent() {
@@ -93,6 +202,49 @@ export default function VideoMeetComponent() {
   const [copied, setCopied] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [audioLevel, setAudioLevel] = useState(0);
+
+  // New in-meeting feature states
+  const [videoEffect, setVideoEffect] = useState("none");
+  const [virtualBg, setVirtualBg] = useState("none");
+  const [showEffectsModal, setShowEffectsModal] = useState(false);
+  const [layoutMode, setLayoutMode] = useState("grid"); // "grid" | "speaker"
+  const [pinnedParticipant, setPinnedParticipant] = useState(null);
+  const [participantNames, setParticipantNames] = useState({});
+  const [elapsedTime, setElapsedTime] = useState(0);
+
+  const messagesEndRef = useRef(null);
+
+  /* =====================================================
+     MEETING DURATION TIMER
+  ===================================================== */
+
+  useEffect(() => {
+    if (askForUsername) return;
+    const timer = setInterval(() => {
+      setElapsedTime((prev) => prev + 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [askForUsername]);
+
+  const formatElapsedTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    const hrs = Math.floor(mins / 60);
+    if (hrs > 0) {
+      return `${hrs}:${String(mins % 60).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+    }
+    return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+  };
+
+  /* =====================================================
+     AUTO SCROLL CHAT TO BOTTOM
+  ===================================================== */
+
+  useEffect(() => {
+    if (showModal) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages, showModal]);
 
   /* =====================================================
      USER DATA SYNC
@@ -540,6 +692,15 @@ export default function VideoMeetComponent() {
 
       if (fromId === socketIdRef.current) return;
 
+      // Real-time Participant Username Exchange
+      if (signal.type === "user-info" && signal.username) {
+        setParticipantNames((prev) => ({
+          ...prev,
+          [fromId]: signal.username,
+        }));
+        return;
+      }
+
       if (!connections[fromId]) return;
 
       if (signal.sdp) {
@@ -608,6 +769,12 @@ export default function VideoMeetComponent() {
           return updatedVideos;
         });
 
+        setParticipantNames((prev) => {
+          const updated = { ...prev };
+          delete updated[id];
+          return updated;
+        });
+
         if (connections[id]) {
           try {
             connections[id].close();
@@ -620,6 +787,19 @@ export default function VideoMeetComponent() {
       });
 
       socketRef.current.on("user-joined", (id, clients) => {
+        // Broadcast our username to all other peers in the meeting
+        clients.forEach((cId) => {
+          if (cId !== socketIdRef.current) {
+            socketRef.current.emit(
+              "signal",
+              cId,
+              JSON.stringify({
+                type: "user-info",
+                username: username.trim() || "Participant",
+              })
+            );
+          }
+        });
         clients.forEach((socketListId) => {
           if (socketListId === socketIdRef.current) {
             return;
@@ -915,11 +1095,26 @@ export default function VideoMeetComponent() {
   ===================================================== */
 
   const addMessage = (data, sender, socketIdSender) => {
+    const timeStr = new Date().toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
+    if (socketIdSender && sender) {
+      setParticipantNames((prev) => ({
+        ...prev,
+        [socketIdSender]: sender,
+      }));
+    }
+
     setMessages((prevMessages) => [
       ...prevMessages,
       {
         sender: sender,
         data: data,
+        time: timeStr,
+        isSelf: socketIdSender === socketIdRef.current || sender === username,
+        socketIdSender: socketIdSender,
       },
     ]);
 
@@ -928,14 +1123,18 @@ export default function VideoMeetComponent() {
     }
   };
 
-  const sendMessage = () => {
-    if (!message.trim()) return;
+  const sendMessage = (customText) => {
+    const textToSend =
+      typeof customText === "string" ? customText.trim() : message.trim();
+    if (!textToSend) return;
 
     if (!socketRef.current) return;
 
-    socketRef.current.emit("chat-message", message, username);
+    socketRef.current.emit("chat-message", textToSend, username);
 
-    setMessage("");
+    if (typeof customText !== "string") {
+      setMessage("");
+    }
   };
 
   const handleMessage = (e) => {
@@ -1599,242 +1798,485 @@ export default function VideoMeetComponent() {
            ACTIVE MEETING
         ===================================================== */
 
-        <div
-          className="relative min-h-screen w-full overflow-hidden"
-          style={{
-            background: `
-              radial-gradient(circle at 15% 20%, rgba(99, 102, 241, 0.15), transparent 45%),
-              radial-gradient(circle at 85% 75%, rgba(139, 92, 246, 0.12), transparent 45%),
-              linear-gradient(180deg, rgba(5, 8, 31, 0.92) 0%, rgba(2, 6, 23, 0.96) 100%),
-              url("/images/cosmic-bg.jpg")
-            `,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-            backgroundAttachment: "fixed",
-          }}
-        >
-          {/* ================= BACKGROUND ================= */}
-
+        <div className="relative flex h-screen w-full flex-col overflow-hidden bg-gradient-to-br from-slate-950 via-[#070b1e] to-slate-950 text-white selection:bg-indigo-500 selection:text-white">
+          {/* ================= AMBIENT BACKGROUND ================= */}
           <div className="pointer-events-none absolute inset-0 overflow-hidden">
-            <div className="absolute -top-60 left-1/3 h-[600px] w-[600px] rounded-full bg-indigo-700/10 blur-[120px]" />
-
-            <div className="absolute bottom-[-250px] right-[-100px] h-[600px] w-[600px] rounded-full bg-purple-700/10 blur-[120px]" />
-
+            <div className="absolute -top-60 left-1/3 h-[600px] w-[600px] rounded-full bg-indigo-700/10 blur-[140px]" />
+            <div className="absolute -bottom-60 right-1/4 h-[600px] w-[600px] rounded-full bg-purple-700/10 blur-[140px]" />
             <div
-              className="absolute inset-0 opacity-[0.05]"
+              className="absolute inset-0 opacity-[0.03]"
               style={{
                 backgroundImage:
-                  "linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)",
-                backgroundSize: "70px 70px",
+                  "linear-gradient(rgba(255,255,255,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.08) 1px, transparent 1px)",
+                backgroundSize: "64px 64px",
               }}
             />
           </div>
 
-          {/* ================= TOP BAR ================= */}
+          {/* ================= TOP HEADER BAR ================= */}
+          <header className="relative z-30 flex h-[64px] flex-shrink-0 items-center justify-between border-b border-white/[0.08] bg-slate-950/70 px-4 sm:px-6 backdrop-blur-2xl">
+            {/* Left: Logo + Room Info */}
+            <div className="flex items-center gap-3 sm:gap-4">
+              <Logo size="sm" to="/home" subtitle="CONFERENCE" />
 
-          <div className="relative z-20 flex h-[75px] items-center justify-between border-b border-white/10 bg-slate-950/70 px-5 backdrop-blur-xl md:px-8">
-            <Logo size="sm" subtitle="VIDEO CONFERENCE" />
-
-            {/* Meeting title */}
-
-            <div className="hidden text-center md:block">
-              <h2 className="text-sm font-semibold text-white">
-                MeetNova Room
-              </h2>
-
-              <div className="mt-1 flex items-center justify-center gap-2 text-xs text-slate-500">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                Live Meeting
+              <div className="hidden sm:flex items-center gap-2 rounded-full border border-white/10 bg-slate-900/80 px-3 py-1 backdrop-blur-md">
+                <span className="text-[10px] font-mono font-bold tracking-wider text-slate-400 uppercase">
+                  Room:
+                </span>
+                <span className="max-w-[130px] truncate text-xs font-mono font-bold text-indigo-200">
+                  {meetingCode}
+                </span>
+                <button
+                  onClick={handleCopyLink}
+                  className="ml-0.5 flex items-center gap-1 rounded-md bg-white/10 px-2 py-0.5 text-[11px] font-medium text-slate-200 transition hover:bg-white/20"
+                  title="Copy meeting invite link"
+                >
+                  {copied ? (
+                    <CheckIcon sx={{ fontSize: 13, color: "#34d399" }} />
+                  ) : (
+                    <ContentCopyIcon sx={{ fontSize: 13 }} />
+                  )}
+                  <span>{copied ? "Copied" : "Copy"}</span>
+                </button>
               </div>
             </div>
 
-            {/* Secure */}
-
-            <div className="flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/5 px-3 py-2">
-              <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_10px_#34d399]" />
-
-              <span className="hidden text-xs text-emerald-300 sm:block">
-                Secure
+            {/* Center: Live Meeting Duration Timer */}
+            <div className="flex items-center gap-2 rounded-full border border-white/10 bg-black/40 px-3.5 py-1 text-xs backdrop-blur-xl">
+              <span className="relative flex h-2 w-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+              </span>
+              <span className="hidden xs:inline text-[11px] font-semibold text-slate-300">
+                Live
+              </span>
+              <span className="hidden xs:inline text-slate-500">•</span>
+              <AccessTimeIcon sx={{ fontSize: 14, color: "#818cf8" }} />
+              <span className="font-mono text-xs font-bold text-indigo-200">
+                {formatElapsedTime(elapsedTime)}
               </span>
             </div>
-          </div>
 
-          {/* ================= MEETING AREA ================= */}
+            {/* Right: Participant Count + Layout Toggle + Fullscreen */}
+            <div className="flex items-center gap-2 sm:gap-2.5">
+              {/* Participant count chip */}
+              <div className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs font-medium text-slate-300">
+                <GroupsIcon sx={{ fontSize: 15, color: "#34d399" }} />
+                <span className="font-semibold text-white">
+                  {videos.length + 1}
+                </span>
+                <span className="hidden sm:inline">Online</span>
+              </div>
 
-          <div className="relative z-10 h-[calc(100vh-75px)] p-3 md:p-5">
-            <div className="relative flex h-full overflow-hidden rounded-[24px] border border-white/10 bg-slate-900/50 shadow-[0_20px_80px_rgba(0,0,0,0.5)] backdrop-blur-xl">
-              {/* ================= CHAT ================= */}
+              {/* Layout Switcher (Grid vs Speaker View) */}
+              <Tooltip
+                title={
+                  layoutMode === "grid"
+                    ? "Switch to Speaker View"
+                    : "Switch to Grid View"
+                }
+              >
+                <button
+                  onClick={() =>
+                    setLayoutMode((prev) =>
+                      prev === "grid" ? "speaker" : "grid"
+                    )
+                  }
+                  className={`flex h-8 w-8 items-center justify-center rounded-lg border transition ${
+                    layoutMode === "speaker"
+                      ? "border-indigo-500/50 bg-indigo-500/25 text-indigo-300"
+                      : "border-white/10 bg-white/[0.04] text-slate-300 hover:bg-white/10"
+                  }`}
+                >
+                  {layoutMode === "grid" ? (
+                    <ViewSidebarIcon sx={{ fontSize: 17 }} />
+                  ) : (
+                    <GridViewIcon sx={{ fontSize: 17 }} />
+                  )}
+                </button>
+              </Tooltip>
 
-              {showModal && (
-                <div className="absolute bottom-24 left-4 top-4 z-40 flex w-[300px] flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#071126]/95 shadow-2xl backdrop-blur-2xl">
-                  {/* Header */}
+              {/* Effects Modal Trigger in Header */}
+              <Tooltip title="Video Background & Effects">
+                <button
+                  onClick={() => setShowEffectsModal(true)}
+                  className={`flex h-8 w-8 items-center justify-center rounded-lg border transition ${
+                    videoEffect !== "none" || virtualBg !== "none"
+                      ? "border-purple-500/50 bg-purple-500/25 text-purple-300"
+                      : "border-white/10 bg-white/[0.04] text-slate-300 hover:bg-white/10"
+                  }`}
+                >
+                  <AutoFixHighIcon sx={{ fontSize: 17 }} />
+                </button>
+              </Tooltip>
 
-                  <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
-                    <h2 className="text-lg font-bold text-white">Chat</h2>
+              {/* Fullscreen Toggle */}
+              <Tooltip title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}>
+                <button
+                  onClick={handleFullscreen}
+                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/[0.04] text-slate-300 transition hover:bg-white/10"
+                >
+                  {isFullscreen ? (
+                    <FullscreenExitIcon sx={{ fontSize: 17 }} />
+                  ) : (
+                    <FullscreenIcon sx={{ fontSize: 17 }} />
+                  )}
+                </button>
+              </Tooltip>
+            </div>
+          </header>
 
-                    <button
-                      onClick={closeChat}
-                      className="text-2xl text-slate-400 transition hover:text-white"
+          {/* ================= MAIN CONTENT (STAGE + CHAT PANEL) ================= */}
+          <main className="relative z-10 flex flex-1 overflow-hidden p-2 sm:p-3 md:p-4 gap-3">
+            {/* ================= VIDEO STAGE ================= */}
+            <div className="relative flex flex-1 flex-col overflow-hidden rounded-[20px] sm:rounded-[24px] border border-white/10 bg-slate-900/40 backdrop-blur-xl">
+              {/* STAGE HEADER / STATUS ROW */}
+              <div className="relative z-10 flex items-center justify-between px-4 pt-3 pb-1">
+                <div className="flex items-center gap-2 text-xs text-slate-400">
+                  <span className="font-semibold text-white">
+                    {meetingCode.toUpperCase()}
+                  </span>
+                  <span>•</span>
+                  <span>
+                    {videos.length === 0
+                      ? "Sole Participant"
+                      : `${videos.length + 1} People in Meeting`}
+                  </span>
+                </div>
+
+                {/* Active Video Effect / Background Indicator */}
+                {(videoEffect !== "none" || virtualBg !== "none") && (
+                  <button
+                    onClick={() => setShowEffectsModal(true)}
+                    className="flex items-center gap-1.5 rounded-full border border-purple-400/30 bg-purple-500/15 px-2.5 py-0.5 text-[11px] font-medium text-purple-300 transition hover:bg-purple-500/25"
+                  >
+                    <AutoFixHighIcon sx={{ fontSize: 13 }} />
+                    <span>
+                      {videoEffect !== "none"
+                        ? VIDEO_EFFECTS[videoEffect]?.name
+                        : VIRTUAL_BACKGROUNDS[virtualBg]?.name}
+                    </span>
+                  </button>
+                )}
+              </div>
+
+              {/* VIDEO GRID AREA */}
+              <div className="relative flex flex-1 items-center justify-center overflow-hidden p-2 sm:p-3">
+                {/* ---------------- SCENARIO 1: USER IS ALONE IN CALL ---------------- */}
+                {videos.length === 0 ? (
+                  <div className="relative flex h-full w-full max-w-[900px] flex-col items-center justify-center">
+                    {/* Waiting For Others Banner */}
+                    <div className="absolute top-2 z-20 flex items-center gap-2.5 rounded-full border border-indigo-400/30 bg-slate-950/85 px-4 py-1.5 text-xs text-slate-200 backdrop-blur-xl shadow-xl">
+                      <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_#34d399]" />
+                      <span>Waiting for others to join</span>
+                      <button
+                        onClick={handleCopyLink}
+                        className="ml-1 rounded-md bg-indigo-500/20 px-2 py-0.5 text-[11px] font-semibold text-indigo-300 border border-indigo-400/30 transition hover:bg-indigo-500/30"
+                      >
+                        {copied ? "Link Copied!" : "Share Invite Link"}
+                      </button>
+                    </div>
+
+                    {/* Local Video Tile in Main Stage */}
+                    <div
+                      className={`relative aspect-video w-full max-h-[calc(100%-80px)] overflow-hidden rounded-[22px] border transition-all duration-300 shadow-2xl ${
+                        audio && audioLevel > 15
+                          ? "border-emerald-400 shadow-[0_0_30px_rgba(52,211,153,0.35)]"
+                          : "border-white/20 shadow-[0_20px_60px_rgba(0,0,0,0.6)]"
+                      }`}
+                      style={{
+                        background:
+                          virtualBg !== "none"
+                            ? VIRTUAL_BACKGROUNDS[virtualBg]?.backdrop
+                            : "#020617",
+                      }}
                     >
-                      ×
-                    </button>
-                  </div>
-
-                  {/* Messages */}
-
-                  <div className="flex-1 overflow-y-auto p-4">
-                    {messages.length !== 0 ? (
-                      messages.map((item, index) => (
-                        <div key={index} className="mb-5">
-                          <p className="mb-1 text-xs font-semibold text-blue-400">
-                            {item.sender}
-                          </p>
-
-                          <div className="inline-block rounded-xl bg-white/5 px-3 py-2 text-sm text-slate-200">
-                            {item.data}
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-sm text-slate-500">No Messages Yet!</p>
-                    )}
-                  </div>
-
-                  {/* Input */}
-
-                  <div className="border-t border-white/10 p-3">
-                    <div className="flex gap-2">
-                      <TextField
-                        value={message}
-                        onChange={handleMessage}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") {
-                            sendMessage();
-                          }
-                        }}
-                        label="Enter your chat"
-                        variant="outlined"
-                        fullWidth
-                        sx={{
-                          "& .MuiOutlinedInput-root": {
-                            borderRadius: "12px",
-                            background: "rgba(255,255,255,0.04)",
-                            color: "white",
-                          },
-
-                          "& .MuiInputLabel-root": {
-                            color: "#64748b",
-                          },
+                      {/* Live Video Tag */}
+                      <video
+                        ref={localVideoref}
+                        autoPlay
+                        muted
+                        playsInline
+                        className={`h-full w-full object-cover transition-opacity duration-300 ${
+                          video && videoAvailable
+                            ? "opacity-100"
+                            : "opacity-0 pointer-events-none"
+                        }`}
+                        style={{
+                          filter: VIDEO_EFFECTS[videoEffect]?.filter || "none",
                         }}
                       />
 
-                      <Button
-                        variant="contained"
-                        onClick={sendMessage}
+                      {/* Camera Off Avatar */}
+                      {(!video || !videoAvailable) && (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-slate-950/95 via-slate-900/90 to-slate-950/95 backdrop-blur-md">
+                          <div
+                            className="flex h-24 w-24 sm:h-28 sm:w-28 items-center justify-center rounded-full text-3xl sm:text-4xl font-extrabold text-white shadow-2xl transition-all duration-300"
+                            style={{
+                              background:
+                                "radial-gradient(circle at 35% 35%, #a855f7, #6366f1 65%, #1e1b4b 100%)",
+                              boxShadow:
+                                audio && audioLevel > 15
+                                  ? "0 0 35px rgba(52, 211, 153, 0.55)"
+                                  : "0 0 30px rgba(99, 102, 241, 0.35)",
+                              border:
+                                audio && audioLevel > 15
+                                  ? "3px solid #34d399"
+                                  : "2px solid rgba(165, 180, 252, 0.4)",
+                            }}
+                          >
+                            {(username.trim()[0] || "Y").toUpperCase()}
+                          </div>
+                          <div className="mt-4 flex items-center gap-1.5 rounded-full border border-white/10 bg-slate-900/80 px-3.5 py-1 text-xs font-medium text-slate-300 shadow-sm">
+                            <VideocamOffIcon
+                              sx={{ fontSize: 14, color: "#fb7185" }}
+                            />
+                            <span>Camera is turned off</span>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Bottom-Left: Participant Name & Status Badge */}
+                      <div className="absolute bottom-3 left-3 z-20 flex items-center gap-2 rounded-full border border-white/15 bg-black/70 px-3 py-1.5 backdrop-blur-xl shadow-lg">
+                        {audio ? (
+                          <MicIcon sx={{ fontSize: 14, color: "#34d399" }} />
+                        ) : (
+                          <MicOffIcon sx={{ fontSize: 14, color: "#fb7185" }} />
+                        )}
+                        <span className="max-w-[140px] sm:max-w-[200px] truncate text-xs font-semibold text-white">
+                          {username.trim() || "You"} (You)
+                        </span>
+                        {videoEffect !== "none" && (
+                          <span className="rounded-full bg-indigo-500/30 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-300 border border-indigo-400/30">
+                            {VIDEO_EFFECTS[videoEffect]?.name}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Top-Right: Effects Shortcut */}
+                      <button
+                        onClick={() => setShowEffectsModal(true)}
+                        className="absolute right-3 top-3 z-20 flex h-8 w-8 items-center justify-center rounded-full border border-white/15 bg-black/50 text-white backdrop-blur-xl transition hover:bg-white/20"
+                        title="Change Background or Effect"
+                      >
+                        <AutoFixHighIcon sx={{ fontSize: 16 }} />
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  /* ---------------- SCENARIO 2: MULTIPLE PARTICIPANTS (GRID & SPEAKER) ---------------- */
+                  <div
+                    className={`h-full w-full ${
+                      layoutMode === "grid"
+                        ? `grid gap-3.5 ${
+                            videos.length === 1
+                              ? "grid-cols-1 md:grid-cols-2"
+                              : videos.length <= 3
+                              ? "grid-cols-1 sm:grid-cols-2"
+                              : "grid-cols-2 lg:grid-cols-3"
+                          }`
+                        : "flex flex-col gap-3"
+                    }`}
+                  >
+                    {/* 1. Local User Video Tile */}
+                    <div
+                      className={`relative min-h-[180px] overflow-hidden rounded-[20px] border transition-all duration-200 shadow-lg ${
+                        layoutMode === "speaker"
+                          ? "h-[180px] w-[260px] flex-shrink-0"
+                          : "h-full w-full"
+                      } ${
+                        audio && audioLevel > 15
+                          ? "border-emerald-400 shadow-[0_0_20px_rgba(52,211,153,0.35)]"
+                          : "border-white/15 bg-slate-950"
+                      }`}
+                      style={{
+                        background:
+                          virtualBg !== "none"
+                            ? VIRTUAL_BACKGROUNDS[virtualBg]?.backdrop
+                            : "#020617",
+                      }}
+                    >
+                      <video
+                        ref={localVideoref}
+                        autoPlay
+                        muted
+                        playsInline
+                        className={`h-full w-full object-cover transition-opacity duration-300 ${
+                          video && videoAvailable
+                            ? "opacity-100"
+                            : "opacity-0 pointer-events-none"
+                        }`}
+                        style={{
+                          filter: VIDEO_EFFECTS[videoEffect]?.filter || "none",
+                        }}
+                      />
+
+                      {/* Camera Off Avatar */}
+                      {(!video || !videoAvailable) && (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-slate-950/95 via-slate-900/90 to-slate-950/95 backdrop-blur-md">
+                          <div
+                            className="flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-full text-2xl sm:text-3xl font-extrabold text-white shadow-xl"
+                            style={{
+                              background:
+                                "radial-gradient(circle at 35% 35%, #a855f7, #6366f1 65%, #1e1b4b 100%)",
+                            }}
+                          >
+                            {(username.trim()[0] || "Y").toUpperCase()}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Participant Name Badge */}
+                      <div className="absolute bottom-2.5 left-2.5 z-20 flex items-center gap-2 rounded-full border border-white/15 bg-black/70 px-3 py-1 text-xs font-semibold backdrop-blur-xl text-white">
+                        {audio ? (
+                          <MicIcon sx={{ fontSize: 13, color: "#34d399" }} />
+                        ) : (
+                          <MicOffIcon sx={{ fontSize: 13, color: "#fb7185" }} />
+                        )}
+                        <span className="max-w-[120px] truncate">
+                          {username.trim() || "You"} (You)
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* 2. Remote Participants Video Tiles */}
+                    {videos.map((remotePeer, idx) => {
+                      const peerDisplayName =
+                        participantNames[remotePeer.socketId] ||
+                        `Participant ${idx + 1}`;
+                      const isPinned =
+                        pinnedParticipant === remotePeer.socketId;
+
+                      return (
+                        <div
+                          key={remotePeer.socketId}
+                          className={`relative min-h-[180px] overflow-hidden rounded-[20px] border border-white/15 bg-slate-950 shadow-lg ${
+                            layoutMode === "speaker" && !isPinned
+                              ? "h-[180px] w-[260px] flex-shrink-0"
+                              : "h-full w-full"
+                          }`}
+                        >
+                          <video
+                            data-socket={remotePeer.socketId}
+                            ref={(ref) => {
+                              if (ref && remotePeer.stream) {
+                                ref.srcObject = remotePeer.stream;
+                              }
+                            }}
+                            autoPlay
+                            playsInline
+                            className="h-full w-full object-cover"
+                          />
+
+                          {/* Fallback Cosmic Avatar if stream is black/empty */}
+                          <div className="pointer-events-none absolute inset-0 -z-10 flex flex-col items-center justify-center bg-slate-900">
+                            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-tr from-indigo-500 to-purple-600 text-2xl font-bold text-white">
+                              {peerDisplayName[0].toUpperCase()}
+                            </div>
+                          </div>
+
+                          {/* Participant Name Badge */}
+                          <div className="absolute bottom-2.5 left-2.5 z-20 flex items-center gap-2 rounded-full border border-white/15 bg-black/70 px-3 py-1 text-xs font-semibold backdrop-blur-xl text-white">
+                            <MicIcon sx={{ fontSize: 13, color: "#34d399" }} />
+                            <span className="max-w-[130px] sm:max-w-[180px] truncate">
+                              {peerDisplayName}
+                            </span>
+                          </div>
+
+                          {/* Pin / Spotlight Action in Top-Right */}
+                          <button
+                            onClick={() =>
+                              setPinnedParticipant((prev) =>
+                                prev === remotePeer.socketId
+                                  ? null
+                                  : remotePeer.socketId
+                              )
+                            }
+                            className={`absolute right-2.5 top-2.5 z-20 flex h-7 w-7 items-center justify-center rounded-full border backdrop-blur-xl transition ${
+                              isPinned
+                                ? "border-amber-400 bg-amber-400/20 text-amber-300"
+                                : "border-white/15 bg-black/50 text-white/80 hover:bg-white/20"
+                            }`}
+                            title={
+                              isPinned ? "Unpin Participant" : "Pin Participant"
+                            }
+                          >
+                            {isPinned ? (
+                              <PushPinIcon sx={{ fontSize: 14 }} />
+                            ) : (
+                              <PushPinOutlinedIcon sx={{ fontSize: 14 }} />
+                            )}
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* ================= FLOATING CONTROL DOCK ================= */}
+              <div className="relative z-20 flex justify-center pb-3 pt-1">
+                <div className="flex items-center gap-2 sm:gap-4 rounded-[26px] border border-white/15 bg-slate-950/85 px-4 py-2.5 shadow-2xl backdrop-blur-2xl">
+                  {/* Mic Toggle */}
+                  <div className="flex flex-col items-center gap-1">
+                    <Tooltip
+                      title={
+                        audio ? "Mute Microphone" : "Unmute Microphone"
+                      }
+                    >
+                      <IconButton
+                        onClick={handleAudio}
                         sx={{
-                          minWidth: "55px",
-                          borderRadius: "12px",
-                          background: "linear-gradient(135deg,#6366f1,#2563eb)",
+                          width: "50px",
+                          height: "50px",
+                          color: audio ? "#34d399" : "#fb7185",
+                          background: audio
+                            ? "rgba(16, 185, 129, 0.16)"
+                            : "rgba(244, 63, 94, 0.18)",
+                          border: audio
+                            ? "1px solid rgba(52, 211, 153, 0.45)"
+                            : "1px solid rgba(244, 63, 94, 0.45)",
+                          "&:hover": {
+                            background: audio
+                              ? "rgba(16, 185, 129, 0.28)"
+                              : "rgba(244, 63, 94, 0.3)",
+                            transform: "scale(1.05)",
+                          },
+                          transition: "all 0.2s ease",
                         }}
                       >
-                        ➤
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* ================= VIDEO AREA ================= */}
-
-              <div className="flex h-full w-full flex-col p-4 md:p-6">
-                {/* Heading */}
-
-                <div className="mb-4 flex items-center justify-between">
-                  <div>
-                    <h2 className="text-lg font-bold text-white">
-                      MeetNova Room
-                    </h2>
-
-                    <div className="mt-1 flex items-center gap-2 text-xs text-slate-400">
-                      <GroupsIcon fontSize="small" />
-                      {videos.length + 1} Participants
-                      <span className="ml-1 flex items-end gap-[2px]">
-                        <i className="h-2 w-[3px] rounded-full bg-emerald-400" />
-
-                        <i className="h-3 w-[3px] rounded-full bg-emerald-400" />
-
-                        <i className="h-4 w-[3px] rounded-full bg-emerald-400" />
-                      </span>
-                    </div>
+                        {audio === true ? <MicIcon /> : <MicOffIcon />}
+                      </IconButton>
+                    </Tooltip>
+                    <span className="text-[10px] font-medium text-slate-300">
+                      Mic
+                    </span>
                   </div>
 
-                  <div className="flex gap-2">
-                    <button className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-slate-300 transition hover:bg-white/10">
-                      ▦
-                    </button>
-
-                    <button className="flex h-11 w-11 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-slate-300 transition hover:bg-white/10">
-                      •••
-                    </button>
-                  </div>
-                </div>
-
-                {/* ================= VIDEOS ================= */}
-
-                <div className="relative flex-1 overflow-hidden">
-                  {/* Local video */}
-
-                  <video
-                    className="absolute right-2 top-2 z-20 h-[170px] w-[270px] rounded-2xl border border-white/20 bg-slate-900 object-cover shadow-2xl md:h-[210px] md:w-[330px]"
-                    ref={localVideoref}
-                    autoPlay
-                    muted
-                    playsInline
-                  />
-
-                  {/* Participants */}
-
-                  <div className="grid h-full w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-2">
-                    {videos.map((video) => (
-                      <div
-                        key={video.socketId}
-                        className="relative min-h-[220px] overflow-hidden rounded-2xl border border-white/10 bg-slate-900 shadow-xl"
-                      >
-                        <video
-                          data-socket={video.socketId}
-                          ref={(ref) => {
-                            if (ref && video.stream) {
-                              ref.srcObject = video.stream;
-                            }
-                          }}
-                          autoPlay
-                          playsInline
-                          className="h-full w-full object-cover"
-                        />
-
-                        <div className="absolute bottom-3 left-3 rounded-lg bg-black/60 px-3 py-1.5 text-xs font-medium backdrop-blur-md">
-                          Participant
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* ================= CONTROLS ================= */}
-
-                <div className="mt-4 flex justify-center">
-                  <div className="flex items-center gap-2 rounded-[28px] border border-white/10 bg-slate-950/80 px-4 py-3 shadow-2xl backdrop-blur-xl md:gap-5 md:px-7">
-                    {/* Camera */}
-
-                    <div className="flex flex-col items-center gap-1">
+                  {/* Camera Toggle */}
+                  <div className="flex flex-col items-center gap-1">
+                    <Tooltip
+                      title={video ? "Turn Off Camera" : "Turn On Camera"}
+                    >
                       <IconButton
                         onClick={handleVideo}
-                        style={{
-                          color: "white",
-                          width: "58px",
-                          height: "58px",
-                          background: "rgba(255,255,255,0.05)",
-                          border: "1px solid rgba(255,255,255,0.1)",
+                        sx={{
+                          width: "50px",
+                          height: "50px",
+                          color: video ? "#a5b4fc" : "#fb7185",
+                          background: video
+                            ? "rgba(99, 102, 241, 0.16)"
+                            : "rgba(244, 63, 94, 0.18)",
+                          border: video
+                            ? "1px solid rgba(129, 140, 248, 0.45)"
+                            : "1px solid rgba(244, 63, 94, 0.45)",
+                          "&:hover": {
+                            background: video
+                              ? "rgba(99, 102, 241, 0.28)"
+                              : "rgba(244, 63, 94, 0.3)",
+                            transform: "scale(1.05)",
+                          },
+                          transition: "all 0.2s ease",
                         }}
                       >
                         {video === true ? (
@@ -1843,66 +2285,72 @@ export default function VideoMeetComponent() {
                           <VideocamOffIcon />
                         )}
                       </IconButton>
+                    </Tooltip>
+                    <span className="text-[10px] font-medium text-slate-300">
+                      Camera
+                    </span>
+                  </div>
 
-                      <span className="hidden text-xs text-slate-300 sm:block">
-                        Camera
-                      </span>
-                    </div>
-
-                    {/* Mic */}
-
-                    <div className="flex flex-col items-center gap-1">
+                  {/* Effects / Virtual Background Toggle */}
+                  <div className="flex flex-col items-center gap-1">
+                    <Tooltip title="Virtual Backgrounds & Camera Filters">
                       <IconButton
-                        onClick={handleAudio}
-                        style={{
-                          color: "white",
-                          width: "58px",
-                          height: "58px",
-                          background: "rgba(255,255,255,0.05)",
-                          border: "1px solid rgba(255,255,255,0.1)",
+                        onClick={() => setShowEffectsModal(true)}
+                        sx={{
+                          width: "50px",
+                          height: "50px",
+                          color:
+                            videoEffect !== "none" || virtualBg !== "none"
+                              ? "#c084fc"
+                              : "#cbd5e1",
+                          background:
+                            videoEffect !== "none" || virtualBg !== "none"
+                              ? "rgba(192, 132, 252, 0.2)"
+                              : "rgba(255, 255, 255, 0.06)",
+                          border:
+                            videoEffect !== "none" || virtualBg !== "none"
+                              ? "1px solid rgba(192, 132, 252, 0.5)"
+                              : "1px solid rgba(255, 255, 255, 0.12)",
+                          "&:hover": {
+                            background: "rgba(192, 132, 252, 0.25)",
+                            transform: "scale(1.05)",
+                          },
+                          transition: "all 0.2s ease",
                         }}
                       >
-                        {audio === true ? <MicIcon /> : <MicOffIcon />}
+                        <AutoFixHighIcon />
                       </IconButton>
+                    </Tooltip>
+                    <span className="text-[10px] font-medium text-slate-300">
+                      Effects
+                    </span>
+                  </div>
 
-                      <span className="hidden text-xs text-slate-300 sm:block">
-                        Mic
-                      </span>
-                    </div>
-
-                    {/* End Call */}
-
+                  {/* Screen Share */}
+                  {screenAvailable === true && (
                     <div className="flex flex-col items-center gap-1">
-                      <IconButton
-                        onClick={handleEndCall}
-                        style={{
-                          color: "white",
-                          width: "64px",
-                          height: "64px",
-                          background: "linear-gradient(135deg,#ef4444,#f43f5e)",
-                          boxShadow: "0 0 25px rgba(239,68,68,0.4)",
-                        }}
+                      <Tooltip
+                        title={
+                          screen ? "Stop Sharing Screen" : "Share Screen"
+                        }
                       >
-                        <CallEndIcon />
-                      </IconButton>
-
-                      <span className="hidden text-xs text-slate-300 sm:block">
-                        End Call
-                      </span>
-                    </div>
-
-                    {/* Screen Share */}
-
-                    {screenAvailable === true && (
-                      <div className="flex flex-col items-center gap-1">
                         <IconButton
                           onClick={handleScreen}
-                          style={{
-                            color: "white",
-                            width: "58px",
-                            height: "58px",
-                            background: "rgba(255,255,255,0.05)",
-                            border: "1px solid rgba(255,255,255,0.1)",
+                          sx={{
+                            width: "50px",
+                            height: "50px",
+                            color: screen ? "#34d399" : "#cbd5e1",
+                            background: screen
+                              ? "rgba(16, 185, 129, 0.2)"
+                              : "rgba(255, 255, 255, 0.06)",
+                            border: screen
+                              ? "1px solid rgba(52, 211, 153, 0.5)"
+                              : "1px solid rgba(255, 255, 255, 0.12)",
+                            "&:hover": {
+                              background: "rgba(255, 255, 255, 0.12)",
+                              transform: "scale(1.05)",
+                            },
+                            transition: "all 0.2s ease",
                           }}
                         >
                           {screen === true ? (
@@ -1911,17 +2359,21 @@ export default function VideoMeetComponent() {
                             <ScreenShareIcon />
                           )}
                         </IconButton>
+                      </Tooltip>
+                      <span className="text-[10px] font-medium text-slate-300">
+                        Screen
+                      </span>
+                    </div>
+                  )}
 
-                        <span className="hidden text-xs text-slate-300 sm:block">
-                          Screen
-                        </span>
-                      </div>
-                    )}
-
-                    {/* Chat */}
-
-                    <div className="flex flex-col items-center gap-1">
-                      <Badge badgeContent={newMessages} max={999} color="error">
+                  {/* Chat Toggle with Unread Badge */}
+                  <div className="flex flex-col items-center gap-1">
+                    <Tooltip title={showModal ? "Close Chat" : "Meeting Chat"}>
+                      <Badge
+                        badgeContent={newMessages}
+                        max={999}
+                        color="error"
+                      >
                         <IconButton
                           onClick={() => {
                             if (showModal) {
@@ -1930,27 +2382,420 @@ export default function VideoMeetComponent() {
                               openChat();
                             }
                           }}
-                          style={{
-                            color: "white",
-                            width: "58px",
-                            height: "58px",
-                            background: "rgba(255,255,255,0.05)",
-                            border: "1px solid rgba(255,255,255,0.1)",
+                          sx={{
+                            width: "50px",
+                            height: "50px",
+                            color: showModal ? "#818cf8" : "#cbd5e1",
+                            background: showModal
+                              ? "rgba(99, 102, 241, 0.25)"
+                              : "rgba(255, 255, 255, 0.06)",
+                            border: showModal
+                              ? "1px solid rgba(129, 140, 248, 0.5)"
+                              : "1px solid rgba(255, 255, 255, 0.12)",
+                            "&:hover": {
+                              background: "rgba(99, 102, 241, 0.2)",
+                              transform: "scale(1.05)",
+                            },
+                            transition: "all 0.2s ease",
                           }}
                         >
                           <ChatIcon />
                         </IconButton>
                       </Badge>
+                    </Tooltip>
+                    <span className="text-[10px] font-medium text-slate-300">
+                      Chat
+                    </span>
+                  </div>
 
-                      <span className="hidden text-xs text-slate-300 sm:block">
-                        Chat
-                      </span>
-                    </div>
+                  <div className="h-7 w-px bg-white/15" />
+
+                  {/* Leave / End Call */}
+                  <div className="flex flex-col items-center gap-1">
+                    <Tooltip title="Leave Meeting">
+                      <IconButton
+                        onClick={handleEndCall}
+                        sx={{
+                          width: "54px",
+                          height: "54px",
+                          color: "white",
+                          background:
+                            "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)",
+                          boxShadow: "0 0 20px rgba(239, 68, 68, 0.45)",
+                          "&:hover": {
+                            background:
+                              "linear-gradient(135deg, #f87171 0%, #ef4444 100%)",
+                            boxShadow: "0 0 25px rgba(239, 68, 68, 0.6)",
+                            transform: "scale(1.05)",
+                          },
+                          transition: "all 0.2s ease",
+                        }}
+                      >
+                        <CallEndIcon />
+                      </IconButton>
+                    </Tooltip>
+                    <span className="text-[10px] font-medium text-rose-400">
+                      Leave
+                    </span>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
+
+            {/* ================= ZOOM-STYLE PREMIUM CHAT PANEL ================= */}
+            {showModal && (
+              <aside className="relative z-30 flex w-full md:w-[360px] lg:w-[380px] flex-col overflow-hidden rounded-[20px] sm:rounded-[24px] border border-white/15 bg-[#070e22]/95 shadow-2xl backdrop-blur-2xl transition-all duration-300">
+                {/* Chat Header */}
+                <div className="flex items-center justify-between border-b border-white/10 px-4 py-3.5 bg-white/[0.02]">
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-500/20 text-indigo-400">
+                      <ChatIcon sx={{ fontSize: 16 }} />
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-bold text-white">
+                        Meeting Chat
+                      </h3>
+                      <p className="text-[10px] text-slate-400">
+                        {videos.length + 1} participants in call
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={closeChat}
+                    className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition hover:bg-white/10 hover:text-white"
+                    title="Close Chat"
+                  >
+                    <CloseIcon sx={{ fontSize: 18 }} />
+                  </button>
+                </div>
+
+                {/* Zoom Recipient Banner: "To: Everyone" */}
+                <div className="flex items-center justify-between border-b border-white/[0.08] bg-slate-950/60 px-4 py-2 text-xs">
+                  <div className="flex items-center gap-1.5">
+                    <LockIcon sx={{ fontSize: 13, color: "#818cf8" }} />
+                    <span className="text-slate-400">To:</span>
+                    <span className="rounded-md border border-indigo-400/30 bg-indigo-500/15 px-2 py-0.5 font-semibold text-indigo-200">
+                      Everyone
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-slate-500">
+                    Public Chat
+                  </span>
+                </div>
+
+                {/* Messages Feed */}
+                <div className="flex-1 overflow-y-auto p-4 space-y-3.5">
+                  {messages.length !== 0 ? (
+                    messages.map((item, index) => {
+                      const isSelf = item.isSelf;
+                      const senderName = item.sender || "Participant";
+                      const initial = senderName[0]?.toUpperCase() || "P";
+
+                      return (
+                        <div
+                          key={index}
+                          className={`flex flex-col ${
+                            isSelf ? "items-end" : "items-start"
+                          }`}
+                        >
+                          {/* Sender Info & Timestamp */}
+                          <div
+                            className={`flex items-center gap-1.5 mb-1 text-[11px] ${
+                              isSelf ? "flex-row-reverse" : "flex-row"
+                            }`}
+                          >
+                            <span
+                              className={`font-semibold ${
+                                isSelf ? "text-indigo-300" : "text-emerald-400"
+                              }`}
+                            >
+                              {isSelf ? "You" : senderName}
+                            </span>
+                            <span className="text-[10px] text-slate-500">
+                              {item.time || ""}
+                            </span>
+                          </div>
+
+                          {/* Message Bubble */}
+                          <div className="flex items-end gap-2 max-w-[85%]">
+                            {!isSelf && (
+                              <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-slate-800 text-[10px] font-bold text-slate-200 border border-white/10">
+                                {initial}
+                              </div>
+                            )}
+
+                            <div
+                              className={`rounded-2xl px-3.5 py-2 text-sm leading-relaxed break-words shadow-md ${
+                                isSelf
+                                  ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-tr-xs"
+                                  : "bg-slate-800/90 border border-white/10 text-slate-200 rounded-tl-xs backdrop-blur-md"
+                              }`}
+                            >
+                              {item.data}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    /* Clean Empty State */
+                    <div className="flex h-full flex-col items-center justify-center text-center p-6">
+                      <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.03] text-indigo-400 mb-3 shadow-inner">
+                        <EmojiEmotionsIcon sx={{ fontSize: 28 }} />
+                      </div>
+                      <h4 className="text-sm font-semibold text-white">
+                        No messages yet
+                      </h4>
+                      <p className="mt-1 text-xs text-slate-400 max-w-[200px]">
+                        Send a quick reaction or message to everyone in the
+                        room.
+                      </p>
+                    </div>
+                  )}
+
+                  <div ref={messagesEndRef} />
+                </div>
+
+                {/* Zoom Quick Reaction Emojis Bar */}
+                <div className="flex items-center justify-between border-t border-white/[0.08] bg-slate-950/40 px-3 py-1.5">
+                  {["👍", "👏", "❤️", "😂", "🔥", "🎉", "🚀"].map((emoji) => (
+                    <button
+                      key={emoji}
+                      onClick={() => sendMessage(emoji)}
+                      className="flex h-7 w-7 items-center justify-center rounded-md text-sm transition hover:scale-125 hover:bg-white/10 active:scale-95"
+                      title={`Send ${emoji}`}
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Zoom-style Message Input */}
+                <div className="border-t border-white/10 bg-slate-950/80 p-3">
+                  <div className="flex items-center gap-2">
+                    <TextField
+                      value={message}
+                      onChange={handleMessage}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey) {
+                          e.preventDefault();
+                          sendMessage();
+                        }
+                      }}
+                      placeholder="Send a message to everyone..."
+                      variant="outlined"
+                      size="small"
+                      fullWidth
+                      sx={{
+                        "& .MuiOutlinedInput-root": {
+                          borderRadius: "14px",
+                          backgroundColor: "rgba(15, 23, 42, 0.8)",
+                          color: "white",
+                          fontSize: "0.88rem",
+                          "& fieldset": {
+                            borderColor: "rgba(148, 163, 184, 0.25)",
+                          },
+                          "&:hover fieldset": {
+                            borderColor: "rgba(129, 140, 248, 0.6)",
+                          },
+                          "&.Mui-focused fieldset": {
+                            borderColor: "#818cf8",
+                          },
+                        },
+                      }}
+                    />
+
+                    <IconButton
+                      onClick={() => sendMessage()}
+                      disabled={!message.trim()}
+                      sx={{
+                        width: "42px",
+                        height: "42px",
+                        borderRadius: "12px",
+                        background: message.trim()
+                          ? "linear-gradient(135deg, #6366f1, #a855f7)"
+                          : "rgba(255,255,255,0.06)",
+                        color: "white",
+                        "&:hover": {
+                          background:
+                            "linear-gradient(135deg, #4f46e5, #9333ea)",
+                        },
+                        "&.Mui-disabled": {
+                          color: "rgba(255,255,255,0.2)",
+                        },
+                      }}
+                    >
+                      <SendIcon sx={{ fontSize: 18 }} />
+                    </IconButton>
+                  </div>
+                  <div className="mt-1 flex items-center justify-between px-1 text-[10px] text-slate-500">
+                    <span>Press Enter to send</span>
+                    <span>Shift + Enter for new line</span>
+                  </div>
+                </div>
+              </aside>
+            )}
+          </main>
+
+          {/* ================= VIDEO BACKGROUND & EFFECTS MODAL ================= */}
+          {showEffectsModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-fadeIn">
+              <div className="relative flex w-full max-w-[680px] max-h-[90vh] flex-col overflow-hidden rounded-[26px] border border-white/20 bg-[#070e22]/95 p-6 shadow-2xl backdrop-blur-2xl">
+                {/* Modal Header */}
+                <div className="flex items-center justify-between border-b border-white/10 pb-4">
+                  <div className="flex items-center gap-2.5">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-purple-500/20 text-purple-300">
+                      <AutoFixHighIcon sx={{ fontSize: 20 }} />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-bold text-white">
+                        Video Background & Effects
+                      </h3>
+                      <p className="text-xs text-slate-400">
+                        Choose your real-time camera filter and virtual
+                        ambiance
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => setShowEffectsModal(false)}
+                    className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-white/10 hover:text-white"
+                  >
+                    <CloseIcon sx={{ fontSize: 20 }} />
+                  </button>
+                </div>
+
+                {/* Modal Body - Scrollable */}
+                <div className="flex-1 overflow-y-auto py-4 space-y-6 pr-1">
+                  {/* LIVE PREVIEW BOX */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+                        Live Camera Preview
+                      </span>
+                      <span className="rounded-full bg-purple-500/20 px-2.5 py-0.5 text-[11px] font-semibold text-purple-300 border border-purple-400/30">
+                        Active: {VIDEO_EFFECTS[videoEffect]?.name}
+                      </span>
+                    </div>
+
+                    <div
+                      className="relative aspect-video w-full max-w-[380px] mx-auto overflow-hidden rounded-2xl border border-white/20 shadow-xl"
+                      style={{
+                        background:
+                          virtualBg !== "none"
+                            ? VIRTUAL_BACKGROUNDS[virtualBg]?.backdrop
+                            : "#0f172a",
+                      }}
+                    >
+                      <video
+                        ref={(ref) => {
+                          if (ref && window.localStream) {
+                            ref.srcObject = window.localStream;
+                          }
+                        }}
+                        autoPlay
+                        muted
+                        playsInline
+                        className="h-full w-full object-cover"
+                        style={{
+                          filter: VIDEO_EFFECTS[videoEffect]?.filter || "none",
+                        }}
+                      />
+                      <div className="absolute bottom-2 left-2 rounded-md bg-black/60 px-2 py-0.5 text-[10px] font-semibold text-white backdrop-blur-md">
+                        {username.trim() || "You"} (Preview)
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 1. CAMERA FILTERS & BLUR */}
+                  <div>
+                    <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2.5">
+                      Camera Filter & Focus
+                    </h4>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                      {Object.entries(VIDEO_EFFECTS).map(([id, effect]) => {
+                        const isSelected = videoEffect === id;
+
+                        return (
+                          <button
+                            key={id}
+                            type="button"
+                            onClick={() => setVideoEffect(id)}
+                            className={`flex flex-col items-start p-3 rounded-xl border text-left transition duration-200 active:scale-95 ${
+                              isSelected
+                                ? "border-purple-400 bg-purple-500/20 shadow-[0_0_15px_rgba(192,132,252,0.3)]"
+                                : "border-white/10 bg-slate-900/60 hover:border-white/25 hover:bg-slate-900"
+                            }`}
+                          >
+                            <span className="text-lg mb-1">{effect.icon}</span>
+                            <span className="text-xs font-bold text-white">
+                              {effect.name}
+                            </span>
+                            <span className="text-[10px] text-slate-400 mt-0.5">
+                              {effect.desc}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* 2. VIRTUAL BACKGROUND AMBIANCE */}
+                  <div>
+                    <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2.5">
+                      Virtual Background Environment
+                    </h4>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                      {Object.entries(VIRTUAL_BACKGROUNDS).map(([id, bg]) => {
+                        const isSelected = virtualBg === id;
+
+                        return (
+                          <button
+                            key={id}
+                            type="button"
+                            onClick={() => setVirtualBg(id)}
+                            className={`flex flex-col items-start p-3 rounded-xl border text-left transition duration-200 active:scale-95 ${
+                              isSelected
+                                ? "border-indigo-400 bg-indigo-500/20 shadow-[0_0_15px_rgba(99,102,241,0.3)]"
+                                : "border-white/10 bg-slate-900/60 hover:border-white/25 hover:bg-slate-900"
+                            }`}
+                          >
+                            <span className="text-lg mb-1">{bg.icon}</span>
+                            <span className="text-xs font-bold text-white">
+                              {bg.name}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Modal Footer */}
+                <div className="flex items-center justify-end border-t border-white/10 pt-4">
+                  <Button
+                    variant="contained"
+                    onClick={() => setShowEffectsModal(false)}
+                    sx={{
+                      borderRadius: "12px",
+                      px: 3,
+                      py: 1,
+                      textTransform: "none",
+                      fontWeight: 700,
+                      background:
+                        "linear-gradient(100deg, #c026d3 0%, #7c3aed 100%)",
+                    }}
+                  >
+                    Done & Apply
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
