@@ -1040,9 +1040,9 @@ export default function VideoMeetComponent() {
           className="relative min-h-screen w-full flex flex-col justify-between overflow-x-hidden"
           style={{
             background: `
-              radial-gradient(circle at 15% 20%, rgba(99, 102, 241, 0.28), transparent 38%),
-              radial-gradient(circle at 85% 75%, rgba(139, 92, 246, 0.24), transparent 38%),
-              linear-gradient(180deg, rgba(5, 8, 31, 0.90) 0%, rgba(7, 11, 43, 0.95) 100%),
+              radial-gradient(circle at 18% 18%, rgba(99, 102, 241, 0.28), transparent 36%),
+              radial-gradient(circle at 82% 80%, rgba(139, 92, 246, 0.24), transparent 36%),
+              linear-gradient(180deg, rgba(5, 8, 31, 0.90) 0%, rgba(7, 11, 43, 0.96) 100%),
               url("/images/cosmic-bg.jpg")
             `,
             backgroundSize: "cover",
@@ -1053,42 +1053,42 @@ export default function VideoMeetComponent() {
           {/* ================= BACKGROUND EFFECTS ================= */}
 
           <div className="absolute inset-0 overflow-hidden pointer-events-none">
-            <div className="absolute -top-48 right-[-100px] h-[600px] w-[600px] rounded-full bg-purple-700/25 blur-[130px]" />
-            <div className="absolute bottom-[-250px] left-[-150px] h-[600px] w-[600px] rounded-full bg-blue-700/20 blur-[130px]" />
-            <div className="absolute top-[35%] left-[45%] h-[400px] w-[400px] rounded-full bg-indigo-600/10 blur-[100px]" />
+            <div className="absolute -top-40 -right-20 h-[550px] w-[550px] rounded-full bg-purple-700/20 blur-[130px]" />
+            <div className="absolute -bottom-40 -left-20 h-[550px] w-[550px] rounded-full bg-blue-700/18 blur-[130px]" />
+            <div className="absolute top-[35%] left-[45%] h-[380px] w-[380px] rounded-full bg-indigo-600/10 blur-[100px]" />
 
-            {/* Stars */}
-            <div className="absolute top-[8%] left-[35%] h-1 w-1 rounded-full bg-blue-400 shadow-[0_0_12px_#60a5fa]" />
-            <div className="absolute top-[22%] left-[72%] h-1 w-1 rounded-full bg-purple-400 shadow-[0_0_12px_#c084fc]" />
-            <div className="absolute top-[35%] left-[12%] h-1 w-1 rounded-full bg-blue-400" />
-            <div className="absolute bottom-[30%] right-[15%] h-1 w-1 rounded-full bg-purple-400" />
-            <div className="absolute bottom-[15%] left-[30%] h-1 w-1 rounded-full bg-blue-400" />
+            {/* Ambient Star Sparkles */}
+            <div className="absolute top-[10%] left-[32%] h-1 w-1 rounded-full bg-blue-400 shadow-[0_0_12px_#60a5fa]" />
+            <div className="absolute top-[24%] left-[70%] h-1 w-1 rounded-full bg-purple-400 shadow-[0_0_12px_#c084fc]" />
+            <div className="absolute top-[38%] left-[14%] h-1 w-1 rounded-full bg-blue-400 shadow-[0_0_8px_#60a5fa]" />
+            <div className="absolute bottom-[28%] right-[16%] h-1 w-1 rounded-full bg-purple-400 shadow-[0_0_8px_#c084fc]" />
+            <div className="absolute bottom-[16%] left-[28%] h-1 w-1 rounded-full bg-blue-400" />
 
-            {/* Diagonal ambient light */}
-            <div className="absolute -top-32 right-[12%] h-[700px] w-[90px] rotate-[32deg] bg-gradient-to-b from-purple-500/40 via-purple-600/10 to-transparent blur-2xl" />
-
-            {/* Subtle Grid */}
+            {/* Subtle cyber grid */}
             <div
-              className="absolute inset-0 opacity-[0.06]"
+              className="absolute inset-0 opacity-[0.05]"
               style={{
                 backgroundImage:
                   "linear-gradient(rgba(255,255,255,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.08) 1px, transparent 1px)",
-                backgroundSize: "70px 70px",
+                backgroundSize: "64px 64px",
               }}
             />
           </div>
 
           {/* ================= NAVBAR ================= */}
 
-          <header className="relative z-20 flex flex-wrap items-center justify-between gap-4 px-5 py-4 md:px-10 lg:px-12 border-b border-white/[0.07] bg-slate-950/40 backdrop-blur-md">
-            {/* Left: Back + Logo */}
+          <header className="relative z-20 flex flex-wrap items-center justify-between gap-3 px-5 py-4 sm:px-8 md:px-10 lg:px-12 border-b border-white/[0.08] bg-slate-950/45 backdrop-blur-xl">
+            {/* Left: Leave Lobby + Logo */}
             <div className="flex items-center gap-3 sm:gap-4">
               <button
                 onClick={handleBackToHome}
-                className="flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.05] px-3.5 py-1.5 text-xs font-medium text-slate-300 backdrop-blur-xl transition hover:border-white/30 hover:bg-white/[0.12] hover:text-white"
+                className="group flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.05] px-3.5 py-1.5 text-xs font-medium text-slate-300 backdrop-blur-xl transition duration-200 hover:border-white/30 hover:bg-white/[0.12] hover:text-white"
                 title="Leave lobby and return to home"
               >
-                <ArrowBackIcon sx={{ fontSize: 16 }} />
+                <ArrowBackIcon
+                  sx={{ fontSize: 16 }}
+                  className="transition-transform duration-200 group-hover:-translate-x-0.5"
+                />
                 <span className="hidden sm:inline">Leave Lobby</span>
               </button>
 
@@ -1097,19 +1097,19 @@ export default function VideoMeetComponent() {
               <Logo size="sm" to="/home" subtitle="MEETING LOBBY" />
             </div>
 
-            {/* Right: Room info + Encrypted Status */}
+            {/* Right: Room ID Pill + Security Badge */}
             <div className="flex items-center gap-2.5 sm:gap-3">
               {/* Room pill with copy link */}
-              <div className="flex items-center gap-2 rounded-full border border-white/15 bg-slate-900/70 px-3.5 py-1.5 backdrop-blur-xl shadow-sm">
-                <span className="text-[11px] uppercase tracking-wider text-slate-400 font-mono">
+              <div className="flex items-center gap-2 rounded-full border border-white/15 bg-slate-900/80 px-3.5 py-1.5 backdrop-blur-xl shadow-sm">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 font-mono">
                   Room
                 </span>
-                <span className="max-w-[140px] sm:max-w-[200px] truncate text-xs font-semibold text-indigo-200 font-mono">
+                <span className="max-w-[130px] sm:max-w-[200px] truncate text-xs font-semibold text-indigo-200 font-mono">
                   {meetingCode}
                 </span>
                 <button
                   onClick={handleCopyLink}
-                  className={`flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-medium transition ${
+                  className={`flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-medium transition duration-200 ${
                     copied
                       ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
                       : "bg-white/10 text-slate-200 hover:bg-white/20 border border-white/10"
@@ -1121,15 +1121,15 @@ export default function VideoMeetComponent() {
                   ) : (
                     <ContentCopyIcon sx={{ fontSize: 13 }} />
                   )}
-                  <span>{copied ? "Copied!" : "Copy Link"}</span>
+                  <span>{copied ? "Copied!" : "Copy"}</span>
                 </button>
               </div>
 
               {/* Security badge */}
-              <div className="hidden md:flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1.5 backdrop-blur-xl">
+              <div className="hidden md:flex items-center gap-2 rounded-full border border-emerald-400/25 bg-emerald-400/10 px-3.5 py-1.5 backdrop-blur-xl">
                 <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_10px_#34d399]" />
                 <span className="text-xs font-medium text-emerald-300">
-                  Encrypted
+                  Encrypted HD
                 </span>
                 <SecurityIcon className="text-emerald-400" sx={{ fontSize: 15 }} />
               </div>
@@ -1138,232 +1138,228 @@ export default function VideoMeetComponent() {
 
           {/* ================= MAIN LOBBY CARD ================= */}
 
-          <main className="relative z-10 flex flex-1 items-center justify-center px-4 py-6 sm:px-6 md:px-8 lg:px-12">
-            <div className="relative flex w-full max-w-[1240px] flex-col overflow-hidden rounded-[28px] sm:rounded-[32px] border border-white/15 bg-slate-900/55 p-6 shadow-[0_30px_100px_rgba(0,0,0,0.6)] backdrop-blur-2xl sm:p-8 lg:flex-row lg:p-10 gap-8 lg:gap-12 items-center">
-              {/* Internal ambient glow */}
-              <div className="absolute -right-40 -top-40 h-[500px] w-[500px] rounded-full bg-purple-600/15 blur-[100px] pointer-events-none" />
-              <div className="absolute -bottom-40 -left-40 h-[500px] w-[500px] rounded-full bg-blue-600/10 blur-[100px] pointer-events-none" />
+          <main className="relative z-10 flex flex-1 items-center justify-center p-4 sm:p-6 md:p-8 lg:p-10 w-full">
+            <div className="relative flex w-full max-w-[1200px] flex-col lg:flex-row items-center justify-between gap-7 lg:gap-10 xl:gap-12 rounded-[28px] sm:rounded-[32px] border border-white/[0.14] bg-slate-900/60 p-5 sm:p-7 lg:p-9 shadow-[0_30px_100px_rgba(0,0,0,0.65)] backdrop-blur-2xl">
+              {/* Internal ambient glows */}
+              <div className="absolute -right-32 -top-32 h-[450px] w-[450px] rounded-full bg-purple-600/15 blur-[100px] pointer-events-none" />
+              <div className="absolute -bottom-32 -left-32 h-[450px] w-[450px] rounded-full bg-blue-600/12 blur-[100px] pointer-events-none" />
 
-              {/* ================= LEFT COLUMN: DETAILS & FORM ================= */}
+              {/* ================= LEFT / TOP: FORM SECTION ================= */}
 
-              <div className="relative z-10 flex w-full flex-1 flex-col justify-center">
-                <div className="max-w-[500px] w-full mx-auto lg:mx-0">
-                  {/* Category Pill */}
-                  <div className="inline-flex items-center gap-2 rounded-full border border-indigo-500/30 bg-indigo-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-indigo-300">
-                    <span className="h-1.5 w-1.5 rounded-full bg-indigo-400 shadow-[0_0_8px_#818cf8] animate-pulse" />
-                    MeetNova Conference
+              <div className="relative z-10 w-full lg:w-[480px] lg:flex-shrink-0 order-2 lg:order-1 flex flex-col justify-center">
+                {/* Category Pill */}
+                <div className="inline-flex items-center gap-2 rounded-full border border-indigo-400/25 bg-indigo-500/10 px-3.5 py-1 text-xs font-semibold tracking-wide text-indigo-300 w-fit backdrop-blur-md">
+                  <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399] animate-pulse" />
+                  Ready to Connect
+                </div>
+
+                <h1 className="mt-3 text-3xl sm:text-4xl lg:text-[40px] font-extrabold tracking-tight text-white leading-[1.18]">
+                  Join <span className="bg-gradient-to-r from-purple-400 via-indigo-300 to-blue-400 bg-clip-text text-transparent">MeetNova</span>
+                </h1>
+
+                <p className="mt-2 text-sm sm:text-base leading-relaxed text-slate-300/80">
+                  Configure your devices, set your display name, and enter your meeting room.
+                </p>
+
+                {/* Permissions Warning Callout */}
+                {!videoAvailable && !audioAvailable && (
+                  <div className="mt-4 flex items-start gap-2.5 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-3.5 text-xs text-amber-200">
+                    <WarningAmberIcon
+                      sx={{ fontSize: 18, color: "#f59e0b", flexShrink: 0, mt: "1px" }}
+                    />
+                    <span>
+                      Camera and microphone access are blocked in your browser.
+                      You can still join to listen or grant permission in the address bar.
+                    </span>
                   </div>
+                )}
 
-                  <h1 className="mt-4 text-3xl font-extrabold tracking-tight text-white sm:text-4xl lg:text-[46px] leading-[1.15]">
-                    Ready to join?
-                  </h1>
-
-                  <p className="mt-2.5 text-sm sm:text-base leading-relaxed text-slate-400">
-                    Check your camera and audio, set your display name, and step
-                    into the meeting.
-                  </p>
-
-                  {/* Permissions Warning Callout (if both blocked) */}
-                  {!videoAvailable && !audioAvailable && (
-                    <div className="mt-4 flex items-start gap-2.5 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-3.5 text-xs text-amber-200">
-                      <WarningAmberIcon
-                        sx={{ fontSize: 18, color: "#f59e0b", flexShrink: 0, mt: "1px" }}
-                      />
-                      <span>
-                        Camera and microphone access are blocked in your browser.
-                        You can still join to listen or allow permissions in the
-                        address bar.
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Username Form */}
-                  <div className="mt-7 space-y-4">
-                    <div>
-                      <TextField
-                        id="username"
-                        label="Your Display Name"
-                        placeholder="e.g. Alex Morgan"
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" && username.trim()) {
-                            connect();
-                          }
-                        }}
-                        variant="outlined"
-                        fullWidth
-                        InputProps={{
-                          startAdornment: (
-                            <PersonIcon
-                              sx={{
-                                color: "#818cf8",
-                                marginRight: "10px",
-                              }}
-                            />
-                          ),
-                        }}
-                        sx={{
-                          "& .MuiOutlinedInput-root": {
-                            borderRadius: "16px",
-                            backgroundColor: "rgba(15,23,42,0.65)",
-                            color: "white",
-                            fontSize: "1rem",
-                            height: "60px",
-                            "& fieldset": {
-                              borderColor: "rgba(148,163,184,0.35)",
-                            },
-                            "&:hover fieldset": {
-                              borderColor: "rgba(129,140,248,0.7)",
-                            },
-                            "&.Mui-focused fieldset": {
-                              borderColor: "#6366f1",
-                              borderWidth: "1.5px",
-                              boxShadow: "0 0 15px rgba(99,102,241,0.25)",
-                            },
-                          },
-                          "& .MuiInputLabel-root": {
-                            color: "rgba(148,163,184,0.8)",
-                          },
-                          "& .MuiInputLabel-root.Mui-focused": {
-                            color: "#818cf8",
-                          },
-                        }}
-                      />
-                      <div className="mt-1.5 flex items-center justify-between text-[11px] text-slate-400 px-1">
-                        <span>Press Enter to join directly</span>
-                        <span>{username.trim() ? "Ready" : "Name required"}</span>
-                      </div>
-                    </div>
-
-                    {/* Quick Media Pre-join Settings */}
-                    <div className="flex flex-wrap items-center gap-2.5 pt-1">
-                      {/* Mic Quick Toggle */}
-                      <button
-                        type="button"
-                        onClick={handleAudio}
-                        className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-medium transition border ${
-                          audio === true
-                            ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20"
-                            : "border-rose-500/30 bg-rose-500/10 text-rose-300 hover:bg-rose-500/20"
-                        }`}
-                        title="Click to toggle microphone"
-                      >
-                        {audio === true ? (
-                          <>
-                            <MicIcon sx={{ fontSize: 16 }} />
-                            <span>Mic is On</span>
-                            {audioLevel > 5 && (
-                              <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-                            )}
-                          </>
-                        ) : (
-                          <>
-                            <MicOffIcon sx={{ fontSize: 16 }} />
-                            <span>Mic is Muted</span>
-                          </>
-                        )}
-                      </button>
-
-                      {/* Camera Quick Toggle */}
-                      <button
-                        type="button"
-                        onClick={handleVideo}
-                        className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-medium transition border ${
-                          video === true
-                            ? "border-indigo-500/30 bg-indigo-500/10 text-indigo-300 hover:bg-indigo-500/20"
-                            : "border-rose-500/30 bg-rose-500/10 text-rose-300 hover:bg-rose-500/20"
-                        }`}
-                        title="Click to toggle camera"
-                      >
-                        {video === true ? (
-                          <>
-                            <VideocamIcon sx={{ fontSize: 16 }} />
-                            <span>Camera is On</span>
-                          </>
-                        ) : (
-                          <>
-                            <VideocamOffIcon sx={{ fontSize: 16 }} />
-                            <span>Camera is Off</span>
-                          </>
-                        )}
-                      </button>
-                    </div>
-
-                    {/* Connect Button */}
-                    <Button
-                      variant="contained"
-                      onClick={connect}
-                      disabled={!username.trim()}
+                {/* Username & Join Controls */}
+                <div className="mt-6 space-y-4">
+                  <div>
+                    <TextField
+                      id="username"
+                      label="Your Display Name"
+                      placeholder="e.g. Alex Morgan"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && username.trim()) {
+                          connect();
+                        }
+                      }}
+                      variant="outlined"
                       fullWidth
+                      InputProps={{
+                        startAdornment: (
+                          <PersonIcon
+                            sx={{
+                              color: "#818cf8",
+                              marginRight: "10px",
+                            }}
+                          />
+                        ),
+                      }}
                       sx={{
-                        mt: 2,
-                        height: "62px",
-                        borderRadius: "16px",
-                        textTransform: "none",
-                        fontSize: "1.05rem",
-                        fontWeight: 700,
-                        letterSpacing: "0.01em",
-                        background:
-                          "linear-gradient(100deg, #c026d3 0%, #7c3aed 45%, #2563eb 100%)",
-                        boxShadow: "0 12px 35px rgba(99,102,241,0.35)",
-                        "&:hover": {
-                          background:
-                            "linear-gradient(100deg, #d946ef 0%, #8b5cf6 45%, #3b82f6 100%)",
-                          boxShadow: "0 15px 40px rgba(99,102,241,0.55)",
-                          transform: "translateY(-2px)",
+                        "& .MuiOutlinedInput-root": {
+                          borderRadius: "16px",
+                          backgroundColor: "rgba(15,23,42,0.7)",
+                          color: "white",
+                          fontSize: "1rem",
+                          height: "56px",
+                          "& fieldset": {
+                            borderColor: "rgba(148,163,184,0.3)",
+                          },
+                          "&:hover fieldset": {
+                            borderColor: "rgba(129,140,248,0.7)",
+                          },
+                          "&.Mui-focused fieldset": {
+                            borderColor: "#818cf8",
+                            borderWidth: "1.5px",
+                            boxShadow: "0 0 16px rgba(99,102,241,0.25)",
+                          },
                         },
-                        transition: "all 0.25s ease",
-                        "&.Mui-disabled": {
-                          background: "rgba(255,255,255,0.08)",
-                          color: "rgba(255,255,255,0.3)",
+                        "& .MuiInputLabel-root": {
+                          color: "rgba(148,163,184,0.8)",
+                        },
+                        "& .MuiInputLabel-root.Mui-focused": {
+                          color: "#818cf8",
                         },
                       }}
-                    >
-                      <span>Join Meeting</span>
-                      <KeyboardDoubleArrowRightIcon
-                        sx={{
-                          marginLeft: "auto",
-                          marginRight: "4px",
-                        }}
-                      />
-                    </Button>
+                    />
+                    <div className="mt-1.5 flex items-center justify-between text-[11px] text-slate-400 px-1">
+                      <span>Press Enter to join directly</span>
+                      <span className={username.trim() ? "text-emerald-400 font-medium" : "text-slate-500"}>
+                        {username.trim() ? "Name ready" : "Name required"}
+                      </span>
+                    </div>
+                  </div>
 
-                    {/* Features row */}
-                    <div className="mt-5 flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-white/[0.08] text-[11px] text-slate-400">
-                      <div className="flex items-center gap-1.5">
-                        <SecurityIcon
-                          sx={{ fontSize: 14 }}
-                          className="text-emerald-400"
-                        />
-                        <span>End-to-End Encrypted</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <GraphicEqIcon
-                          sx={{ fontSize: 14 }}
-                          className="text-blue-400"
-                        />
-                        <span>HD Spatial Audio</span>
-                      </div>
-                      <div className="hidden sm:flex items-center gap-1.5 text-slate-500">
-                        <span>• Ultra-Low Latency</span>
-                      </div>
+                  {/* Pre-join Quick Toggles - Symmetrical 2-Column Grid */}
+                  <div className="grid grid-cols-2 gap-3 pt-0.5">
+                    {/* Mic Quick Toggle */}
+                    <button
+                      type="button"
+                      onClick={handleAudio}
+                      className={`group relative flex items-center justify-center gap-2 rounded-xl py-2.5 px-3 text-xs font-semibold transition-all duration-200 active:scale-[0.98] border ${
+                        audio === true
+                          ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/25 shadow-[0_0_16px_rgba(16,185,129,0.12)]"
+                          : "border-rose-500/40 bg-rose-500/15 text-rose-300 hover:bg-rose-500/25"
+                      }`}
+                      title="Click to toggle microphone"
+                    >
+                      {audio === true ? (
+                        <>
+                          <MicIcon sx={{ fontSize: 17 }} />
+                          <span>Mic is On</span>
+                          {audioLevel > 5 && (
+                            <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_#34d399]" />
+                          )}
+                        </>
+                      ) : (
+                        <>
+                          <MicOffIcon sx={{ fontSize: 17 }} />
+                          <span>Mic is Muted</span>
+                        </>
+                      )}
+                    </button>
+
+                    {/* Camera Quick Toggle */}
+                    <button
+                      type="button"
+                      onClick={handleVideo}
+                      className={`group relative flex items-center justify-center gap-2 rounded-xl py-2.5 px-3 text-xs font-semibold transition-all duration-200 active:scale-[0.98] border ${
+                        video === true
+                          ? "border-indigo-500/40 bg-indigo-500/15 text-indigo-300 hover:bg-indigo-500/25 shadow-[0_0_16px_rgba(99,102,241,0.12)]"
+                          : "border-rose-500/40 bg-rose-500/15 text-rose-300 hover:bg-rose-500/25"
+                      }`}
+                      title="Click to toggle camera"
+                    >
+                      {video === true ? (
+                        <>
+                          <VideocamIcon sx={{ fontSize: 17 }} />
+                          <span>Camera is On</span>
+                        </>
+                      ) : (
+                        <>
+                          <VideocamOffIcon sx={{ fontSize: 17 }} />
+                          <span>Camera is Off</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                  {/* Join Button */}
+                  <Button
+                    variant="contained"
+                    onClick={connect}
+                    disabled={!username.trim()}
+                    fullWidth
+                    sx={{
+                      mt: 1,
+                      height: "56px",
+                      borderRadius: "16px",
+                      textTransform: "none",
+                      fontSize: "1.05rem",
+                      fontWeight: 700,
+                      letterSpacing: "0.02em",
+                      background:
+                        "linear-gradient(100deg, #c026d3 0%, #7c3aed 45%, #2563eb 100%)",
+                      boxShadow: "0 12px 35px rgba(99,102,241,0.35)",
+                      "&:hover": {
+                        background:
+                          "linear-gradient(100deg, #d946ef 0%, #8b5cf6 45%, #3b82f6 100%)",
+                        boxShadow: "0 15px 40px rgba(99,102,241,0.55)",
+                        transform: "translateY(-2px)",
+                      },
+                      transition: "all 0.25s ease",
+                      "&.Mui-disabled": {
+                        background: "rgba(255,255,255,0.08)",
+                        color: "rgba(255,255,255,0.3)",
+                      },
+                    }}
+                  >
+                    <div className="flex items-center justify-center gap-2">
+                      <span>Join Meeting</span>
+                      <KeyboardDoubleArrowRightIcon sx={{ fontSize: 20 }} />
+                    </div>
+                  </Button>
+
+                  {/* Trust & Quality Features */}
+                  <div className="mt-6 flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-white/[0.08] text-[11px] text-slate-400">
+                    <div className="flex items-center gap-1.5">
+                      <SecurityIcon
+                        sx={{ fontSize: 14 }}
+                        className="text-emerald-400"
+                      />
+                      <span>End-to-End Encrypted</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <GraphicEqIcon
+                        sx={{ fontSize: 14 }}
+                        className="text-blue-400"
+                      />
+                      <span>HD Spatial Audio</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-slate-400">
+                      <span className="h-1.5 w-1.5 rounded-full bg-indigo-400 shadow-[0_0_6px_#818cf8]" />
+                      <span>Low Latency P2P</span>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* ================= RIGHT COLUMN: VIDEO PREVIEW ================= */}
+              {/* ================= RIGHT / TOP: VIDEO PREVIEW ================= */}
 
-              <div className="relative z-10 flex w-full flex-1 flex-col items-center justify-center">
-                <div className="relative w-full max-w-[600px]">
-                  {/* Subtle outer gradient halo */}
-                  <div className="absolute -inset-4 rounded-[30px] bg-gradient-to-r from-blue-600/15 via-purple-600/25 to-fuchsia-600/15 blur-2xl pointer-events-none" />
+              <div className="relative z-10 w-full flex-1 max-w-[620px] order-1 lg:order-2 flex flex-col items-center justify-center">
+                <div className="relative w-full">
+                  {/* Subtle outer halo */}
+                  <div className="absolute -inset-4 rounded-[32px] bg-gradient-to-r from-blue-600/15 via-purple-600/25 to-fuchsia-600/15 blur-2xl pointer-events-none" />
 
-                  {/* 16:9 Video Box */}
+                  {/* 16:9 Video Container */}
                   <div
                     id="lobby-video-preview"
-                    className="relative aspect-video w-full overflow-hidden rounded-[24px] border border-white/20 bg-slate-950 shadow-[0_25px_70px_rgba(0,0,0,0.65)]"
+                    className="relative aspect-video w-full overflow-hidden rounded-[22px] border border-white/20 bg-slate-950 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.7),0_0_0_1px_rgba(255,255,255,0.08)]"
                   >
                     {/* Live Video Tag */}
                     <video
@@ -1381,10 +1377,10 @@ export default function VideoMeetComponent() {
                     {/* Camera Off / Avatar State */}
                     {(!video || !videoAvailable) && (
                       <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-slate-950/95 via-slate-900/90 to-slate-950/95 backdrop-blur-md z-10">
-                        {/* Ambient decorative circle */}
-                        <div className="absolute h-48 w-48 rounded-full bg-indigo-500/10 blur-2xl pointer-events-none" />
+                        {/* Soft background glow */}
+                        <div className="absolute h-48 w-48 rounded-full bg-indigo-500/12 blur-2xl pointer-events-none" />
 
-                        {/* Avatar */}
+                        {/* Cosmic Avatar */}
                         <div
                           className="relative flex h-24 w-24 sm:h-28 sm:w-28 items-center justify-center rounded-full text-3xl sm:text-4xl font-extrabold text-white transition-all duration-300 shadow-2xl"
                           style={{
@@ -1406,16 +1402,16 @@ export default function VideoMeetComponent() {
                             {(username.trim()[0] || "Y").toUpperCase()}
                           </span>
 
-                          {/* Voice pulse ring */}
+                          {/* Voice pulse wave */}
                           {audio && audioLevel > 15 && (
                             <span className="absolute -inset-2.5 rounded-full border border-emerald-400/50 animate-ping pointer-events-none" />
                           )}
                         </div>
 
-                        {/* Camera off label */}
-                        <div className="mt-4 flex items-center gap-1.5 rounded-full border border-white/10 bg-slate-900/80 px-3 py-1 text-xs text-slate-300">
+                        {/* Camera off badge */}
+                        <div className="mt-4 flex items-center gap-1.5 rounded-full border border-white/10 bg-slate-900/80 px-3.5 py-1 text-xs font-medium text-slate-300 shadow-sm">
                           <VideocamOffIcon
-                            sx={{ fontSize: 15 }}
+                            sx={{ fontSize: 14 }}
                             className="text-rose-400"
                           />
                           <span>Camera is turned off</span>
@@ -1423,32 +1419,32 @@ export default function VideoMeetComponent() {
                       </div>
                     )}
 
-                    {/* Gradient Overlay for Controls contrast */}
+                    {/* Gradient Overlay for controls contrast */}
                     <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/30 z-15" />
 
                     {/* Top Floating Badge: Username & Live Audio Activity */}
-                    <div className="absolute left-4 top-4 z-20 flex items-center gap-2.5 rounded-xl border border-white/15 bg-slate-950/75 px-3 py-1.5 backdrop-blur-xl shadow-lg">
+                    <div className="absolute left-3.5 top-3.5 z-20 flex items-center gap-2 rounded-full border border-white/15 bg-black/65 px-3 py-1.5 backdrop-blur-xl shadow-lg">
                       {/* Audio indicator */}
                       {audio ? (
                         <div className="flex items-center gap-1" title="Microphone Active">
                           {audioLevel > 5 ? (
-                            <div className="flex items-end gap-0.5 h-3.5">
+                            <div className="flex items-end gap-0.5 h-3">
                               <span
-                                className="w-1 bg-emerald-400 rounded-full transition-all duration-75"
+                                className="w-0.5 bg-emerald-400 rounded-full transition-all duration-75"
                                 style={{
-                                  height: `${Math.max(4, Math.min(14, (audioLevel / 100) * 16))}px`,
+                                  height: `${Math.max(3, Math.min(12, (audioLevel / 100) * 14))}px`,
                                 }}
                               />
                               <span
-                                className="w-1 bg-emerald-400 rounded-full transition-all duration-75"
+                                className="w-0.5 bg-emerald-400 rounded-full transition-all duration-75"
                                 style={{
-                                  height: `${Math.max(6, Math.min(14, (audioLevel / 100) * 20))}px`,
+                                  height: `${Math.max(5, Math.min(12, (audioLevel / 100) * 16))}px`,
                                 }}
                               />
                               <span
-                                className="w-1 bg-emerald-400 rounded-full transition-all duration-75"
+                                className="w-0.5 bg-emerald-400 rounded-full transition-all duration-75"
                                 style={{
-                                  height: `${Math.max(3, Math.min(14, (audioLevel / 100) * 12))}px`,
+                                  height: `${Math.max(3, Math.min(12, (audioLevel / 100) * 10))}px`,
                                 }}
                               />
                             </div>
@@ -1463,7 +1459,7 @@ export default function VideoMeetComponent() {
                         />
                       )}
 
-                      <span className="max-w-[130px] sm:max-w-[200px] truncate text-xs font-semibold text-white">
+                      <span className="max-w-[120px] sm:max-w-[180px] truncate text-xs font-semibold text-white">
                         {username.trim() || "You"}
                       </span>
                     </div>
@@ -1474,18 +1470,18 @@ export default function VideoMeetComponent() {
                     >
                       <button
                         onClick={handleFullscreen}
-                        className="absolute right-4 top-4 z-20 flex h-9 w-9 items-center justify-center rounded-xl border border-white/15 bg-black/40 text-white backdrop-blur-xl transition hover:bg-white/20"
+                        className="absolute right-3.5 top-3.5 z-20 flex h-8 w-8 items-center justify-center rounded-full border border-white/15 bg-black/50 text-white backdrop-blur-xl transition hover:bg-white/20"
                       >
                         {isFullscreen ? (
-                          <FullscreenExitIcon sx={{ fontSize: 19 }} />
+                          <FullscreenExitIcon sx={{ fontSize: 18 }} />
                         ) : (
-                          <FullscreenIcon sx={{ fontSize: 19 }} />
+                          <FullscreenIcon sx={{ fontSize: 18 }} />
                         )}
                       </button>
                     </Tooltip>
 
                     {/* Bottom Floating Media Dock */}
-                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-3 rounded-full border border-white/20 bg-slate-950/80 px-4 py-2 backdrop-blur-xl shadow-2xl">
+                    <div className="absolute bottom-3.5 left-1/2 -translate-x-1/2 z-20 flex items-center gap-3.5 rounded-full border border-white/20 bg-black/75 px-4 py-2 backdrop-blur-2xl shadow-2xl">
                       {/* Mic Button */}
                       <Tooltip
                         title={
@@ -1498,25 +1494,25 @@ export default function VideoMeetComponent() {
                           onClick={handleAudio}
                           size="medium"
                           sx={{
-                            width: "50px",
-                            height: "50px",
+                            width: "48px",
+                            height: "48px",
                             color: audio ? "#34d399" : "#fb7185",
                             background: audio
-                              ? "rgba(16, 185, 129, 0.15)"
+                              ? "rgba(16, 185, 129, 0.16)"
                               : "rgba(244, 63, 94, 0.18)",
                             border: audio
-                              ? "1px solid rgba(52, 211, 153, 0.4)"
+                              ? "1px solid rgba(52, 211, 153, 0.45)"
                               : "1px solid rgba(244, 63, 94, 0.45)",
                             "&:hover": {
                               background: audio
-                                ? "rgba(16, 185, 129, 0.25)"
+                                ? "rgba(16, 185, 129, 0.28)"
                                 : "rgba(244, 63, 94, 0.3)",
                               transform: "scale(1.05)",
                             },
                             transition: "all 0.2s ease",
                             boxShadow:
                               audio && audioLevel > 15
-                                ? "0 0 15px rgba(52, 211, 153, 0.4)"
+                                ? "0 0 16px rgba(52, 211, 153, 0.45)"
                                 : "none",
                           }}
                         >
@@ -1538,18 +1534,18 @@ export default function VideoMeetComponent() {
                           onClick={handleVideo}
                           size="medium"
                           sx={{
-                            width: "50px",
-                            height: "50px",
+                            width: "48px",
+                            height: "48px",
                             color: video ? "#a5b4fc" : "#fb7185",
                             background: video
-                              ? "rgba(99, 102, 241, 0.15)"
+                              ? "rgba(99, 102, 241, 0.16)"
                               : "rgba(244, 63, 94, 0.18)",
                             border: video
-                              ? "1px solid rgba(129, 140, 248, 0.4)"
+                              ? "1px solid rgba(129, 140, 248, 0.45)"
                               : "1px solid rgba(244, 63, 94, 0.45)",
                             "&:hover": {
                               background: video
-                                ? "rgba(99, 102, 241, 0.25)"
+                                ? "rgba(99, 102, 241, 0.28)"
                                 : "rgba(244, 63, 94, 0.3)",
                               transform: "scale(1.05)",
                             },
@@ -1567,7 +1563,7 @@ export default function VideoMeetComponent() {
                   </div>
 
                   {/* Device Status Under Preview */}
-                  <div className="mt-3.5 flex items-center justify-center gap-2 text-xs text-slate-400">
+                  <div className="mt-3 flex items-center justify-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.03] px-3.5 py-1 text-xs text-slate-300 w-fit mx-auto backdrop-blur-md">
                     <span
                       className={`h-2 w-2 rounded-full ${
                         video && audio
@@ -1579,12 +1575,12 @@ export default function VideoMeetComponent() {
                     />
                     <span>
                       {video && audio
-                        ? "Camera and microphone are active"
+                        ? "Camera & microphone ready"
                         : video && !audio
                         ? "Microphone is muted"
                         : !video && audio
-                        ? "Camera is off • Microphone is active"
-                        : "Microphone and camera are turned off"}
+                        ? "Camera off • Microphone ready"
+                        : "Camera & microphone disabled"}
                     </span>
                   </div>
                 </div>
@@ -1594,7 +1590,7 @@ export default function VideoMeetComponent() {
 
           {/* ================= FOOTER ================= */}
 
-          <footer className="relative z-10 py-3 text-center text-xs text-slate-500 border-t border-white/[0.05]">
+          <footer className="relative z-10 py-3 text-center text-xs text-slate-400/70 border-t border-white/[0.05]">
             MeetNova • Next-Generation Video Collaboration
           </footer>
         </div>
