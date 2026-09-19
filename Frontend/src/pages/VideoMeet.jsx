@@ -1285,6 +1285,33 @@ export default function VideoMeetComponent() {
   };
 
   /* =====================================================
+     CHAT MESSAGE LINK PARSER
+  ===================================================== */
+
+  const renderMessageContent = (text) => {
+    if (!text) return "";
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    const parts = text.split(urlRegex);
+    return parts.map((part, index) => {
+      if (part.match(urlRegex)) {
+        return (
+          <a
+            key={index}
+            href={part}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline text-sky-300 hover:text-sky-200 break-all font-medium transition-colors"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {part}
+          </a>
+        );
+      }
+      return part;
+    });
+  };
+
+  /* =====================================================
      RETURN
   ===================================================== */
 
@@ -2274,45 +2301,52 @@ export default function VideoMeetComponent() {
               </div>
             </div>
 
-            {/* ================= ZOOM-STYLE PREMIUM CHAT PANEL ================= */}
+            {/* Mobile Backdrop for closing chat on phone tap */}
             {showModal && (
-              <aside className="relative z-30 flex w-full md:w-[360px] lg:w-[380px] flex-col overflow-hidden rounded-[20px] sm:rounded-[24px] border border-white/15 bg-[#070e22]/95 shadow-2xl backdrop-blur-2xl transition-all duration-300">
+              <div
+                onClick={closeChat}
+                className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:hidden animate-fadeIn"
+              />
+            )}
+
+            {/* ================= USER-FRIENDLY IN-CALL CHAT PANEL ================= */}
+            {showModal && (
+              <aside className="fixed inset-y-0 right-0 z-50 flex w-full sm:w-[360px] md:relative md:inset-auto md:z-30 md:w-[350px] lg:w-[380px] flex-col overflow-hidden border-l border-white/10 md:border md:rounded-[24px] bg-[#070e22]/98 shadow-2xl backdrop-blur-2xl transition-all duration-300">
                 {/* Chat Header */}
-                <div className="flex items-center justify-between border-b border-white/10 px-4 py-3.5 bg-white/[0.02]">
-                  <div className="flex items-center gap-2">
-                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-500/20 text-indigo-400">
-                      <ChatIcon sx={{ fontSize: 16 }} />
+                <div className="flex items-center justify-between border-b border-white/10 px-4 py-3 bg-white/[0.03]">
+                  <div className="flex items-center gap-2.5">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-500/20 text-indigo-400">
+                      <ChatIcon sx={{ fontSize: 18 }} />
                     </div>
                     <div>
-                      <h3 className="text-sm font-bold text-white">
-                        Meeting Chat
+                      <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                        In-Call Messages
+                        <span className="rounded-full bg-indigo-500/20 px-2 py-0.5 text-[10px] font-semibold text-indigo-300 border border-indigo-500/30">
+                          {videos.length + 1}
+                        </span>
                       </h3>
                       <p className="text-[10px] text-slate-400">
-                        {videos.length + 1} participants in call
+                        Chat with meeting participants
                       </p>
                     </div>
                   </div>
 
-                  <button
-                    onClick={closeChat}
-                    className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition hover:bg-white/10 hover:text-white"
-                    title="Close Chat"
-                  >
-                    <CloseIcon sx={{ fontSize: 18 }} />
-                  </button>
+                  <Tooltip title="Close Chat">
+                    <button
+                      onClick={closeChat}
+                      className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-white/10 hover:text-white"
+                      aria-label="Close Chat"
+                    >
+                      <CloseIcon sx={{ fontSize: 18 }} />
+                    </button>
+                  </Tooltip>
                 </div>
 
-                {/* Zoom Recipient Banner: "To: Everyone" */}
-                <div className="flex items-center justify-between border-b border-white/[0.08] bg-slate-950/60 px-4 py-2 text-xs">
-                  <div className="flex items-center gap-1.5">
-                    <LockIcon sx={{ fontSize: 13, color: "#818cf8" }} />
-                    <span className="text-slate-400">To:</span>
-                    <span className="rounded-md border border-indigo-400/30 bg-indigo-500/15 px-2 py-0.5 font-semibold text-indigo-200">
-                      Everyone
-                    </span>
-                  </div>
-                  <span className="text-[10px] text-slate-500">
-                    Public Chat
+                {/* Privacy Context Notice */}
+                <div className="flex items-center gap-2 border-b border-white/[0.08] bg-slate-950/70 px-4 py-2 text-[11px] text-slate-400">
+                  <LockIcon sx={{ fontSize: 13, color: "#818cf8", flexShrink: 0 }} />
+                  <span>
+                    Messages are only visible during the call and disappear after you leave.
                   </span>
                 </div>
 
@@ -2364,47 +2398,63 @@ export default function VideoMeetComponent() {
                                   : "bg-slate-800/90 border border-white/10 text-slate-200 rounded-tl-xs backdrop-blur-md"
                               }`}
                             >
-                              {item.data}
+                              {renderMessageContent(item.data)}
                             </div>
                           </div>
                         </div>
                       );
                     })
                   ) : (
-                    /* Clean Empty State */
-                    <div className="flex h-full flex-col items-center justify-center text-center p-6">
-                      <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.03] text-indigo-400 mb-3 shadow-inner">
-                        <EmojiEmotionsIcon sx={{ fontSize: 28 }} />
+                    /* Friendly Empty State with One-Click Starters */
+                    <div className="flex h-full flex-col items-center justify-center text-center p-4">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-indigo-400 mb-2 shadow-inner">
+                        <EmojiEmotionsIcon sx={{ fontSize: 24 }} />
                       </div>
                       <h4 className="text-sm font-semibold text-white">
                         No messages yet
                       </h4>
-                      <p className="mt-1 text-xs text-slate-400 max-w-[200px]">
-                        Send a quick reaction or message to everyone in the
-                        room.
+                      <p className="mt-1 text-xs text-slate-400 max-w-[220px]">
+                        Start the conversation or tap a quick message below:
                       </p>
+
+                      {/* 1-Click Starter Quick Chips */}
+                      <div className="mt-4 flex flex-col gap-2 w-full max-w-[240px]">
+                        {[
+                          { text: "👋 Say Hello", msg: "Hello everyone! 👋" },
+                          { text: "👍 Audio is clear!", msg: "Audio and video are working great! 👍" },
+                          { text: "✋ Quick question", msg: "I have a quick question ✋" },
+                        ].map((chip) => (
+                          <button
+                            key={chip.text}
+                            onClick={() => sendMessage(chip.msg)}
+                            className="flex items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/5 py-2 px-3 text-xs font-medium text-slate-300 transition hover:border-indigo-400/40 hover:bg-indigo-500/15 hover:text-white active:scale-95"
+                          >
+                            <span>{chip.text}</span>
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   )}
 
                   <div ref={messagesEndRef} />
                 </div>
 
-                {/* Zoom Quick Reaction Emojis Bar */}
-                <div className="flex items-center justify-between border-t border-white/[0.08] bg-slate-950/40 px-3 py-1.5">
-                  {["👍", "👏", "❤️", "😂", "🔥", "🎉", "🚀"].map((emoji) => (
-                    <button
-                      key={emoji}
-                      onClick={() => sendMessage(emoji)}
-                      className="flex h-7 w-7 items-center justify-center rounded-md text-sm transition hover:scale-125 hover:bg-white/10 active:scale-95"
-                      title={`Send ${emoji}`}
-                    >
-                      {emoji}
-                    </button>
+                {/* Quick Reaction Emojis Tray */}
+                <div className="flex items-center justify-between border-t border-white/[0.08] bg-slate-950/60 px-3 py-1.5">
+                  {["👋", "👍", "👏", "❤️", "😂", "🔥", "🎉", "🚀"].map((emoji) => (
+                    <Tooltip key={emoji} title={`Send ${emoji}`}>
+                      <button
+                        onClick={() => sendMessage(emoji)}
+                        className="flex h-7 w-7 items-center justify-center rounded-md text-sm transition hover:scale-125 hover:bg-white/10 active:scale-95"
+                      >
+                        {emoji}
+                      </button>
+                    </Tooltip>
                   ))}
                 </div>
 
-                {/* Zoom-style Message Input */}
-                <div className="border-t border-white/10 bg-slate-950/80 p-3">
+                {/* Message Input Bar */}
+                <div className="border-t border-white/10 bg-slate-950/90 p-3">
                   <div className="flex items-center gap-2">
                     <TextField
                       value={message}
@@ -2419,10 +2469,21 @@ export default function VideoMeetComponent() {
                       variant="outlined"
                       size="small"
                       fullWidth
+                      InputProps={{
+                        endAdornment: message.trim() ? (
+                          <button
+                            onClick={() => setMessage("")}
+                            className="text-slate-400 hover:text-white p-1 text-xs"
+                            title="Clear message"
+                          >
+                            ✕
+                          </button>
+                        ) : null,
+                      }}
                       sx={{
                         "& .MuiOutlinedInput-root": {
                           borderRadius: "14px",
-                          backgroundColor: "rgba(15, 23, 42, 0.8)",
+                          backgroundColor: "rgba(15, 23, 42, 0.85)",
                           color: "white",
                           fontSize: "0.88rem",
                           "& fieldset": {
@@ -2438,30 +2499,37 @@ export default function VideoMeetComponent() {
                       }}
                     />
 
-                    <IconButton
-                      onClick={() => sendMessage()}
-                      disabled={!message.trim()}
-                      sx={{
-                        width: "42px",
-                        height: "42px",
-                        borderRadius: "12px",
-                        background: message.trim()
-                          ? "linear-gradient(135deg, #6366f1, #a855f7)"
-                          : "rgba(255,255,255,0.06)",
-                        color: "white",
-                        "&:hover": {
-                          background:
-                            "linear-gradient(135deg, #4f46e5, #9333ea)",
-                        },
-                        "&.Mui-disabled": {
-                          color: "rgba(255,255,255,0.2)",
-                        },
-                      }}
-                    >
-                      <SendIcon sx={{ fontSize: 18 }} />
-                    </IconButton>
+                    <Tooltip title={message.trim() ? "Send (Enter)" : "Type a message"}>
+                      <span>
+                        <IconButton
+                          onClick={() => sendMessage()}
+                          disabled={!message.trim()}
+                          sx={{
+                            width: "42px",
+                            height: "42px",
+                            borderRadius: "12px",
+                            background: message.trim()
+                              ? "linear-gradient(135deg, #6366f1, #a855f7)"
+                              : "rgba(255,255,255,0.06)",
+                            color: "white",
+                            boxShadow: message.trim()
+                              ? "0 0 12px rgba(99,102,241,0.4)"
+                              : "none",
+                            "&:hover": {
+                              background:
+                                "linear-gradient(135deg, #4f46e5, #9333ea)",
+                            },
+                            "&.Mui-disabled": {
+                              color: "rgba(255,255,255,0.2)",
+                            },
+                          }}
+                        >
+                          <SendIcon sx={{ fontSize: 18 }} />
+                        </IconButton>
+                      </span>
+                    </Tooltip>
                   </div>
-                  <div className="mt-1 flex items-center justify-between px-1 text-[10px] text-slate-500">
+                  <div className="mt-1.5 flex items-center justify-between px-1 text-[10px] text-slate-500">
                     <span>Press Enter to send</span>
                     <span>Shift + Enter for new line</span>
                   </div>
