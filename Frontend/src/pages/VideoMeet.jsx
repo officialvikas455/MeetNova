@@ -149,6 +149,61 @@ const VIRTUAL_BACKGROUNDS = {
   },
 };
 
+/* =====================================================
+   USER-FRIENDLY QUICK PRESETS
+===================================================== */
+
+const SIMPLE_EFFECTS = [
+  {
+    id: "none",
+    name: "None",
+    icon: "🚫",
+    desc: "Original camera",
+    effect: "none",
+    bg: "none",
+  },
+  {
+    id: "blur-soft",
+    name: "Blur",
+    icon: "🌫️",
+    desc: "Soft portrait focus",
+    effect: "blur-soft",
+    bg: "none",
+  },
+  {
+    id: "blur-deep",
+    name: "Deep Blur",
+    icon: "✨",
+    desc: "Privacy background",
+    effect: "blur-deep",
+    bg: "none",
+  },
+  {
+    id: "studio",
+    name: "Studio Glow",
+    icon: "💡",
+    desc: "Clear & warm lighting",
+    effect: "studio",
+    bg: "none",
+  },
+  {
+    id: "office",
+    name: "Office",
+    icon: "🏢",
+    desc: "Executive room",
+    effect: "none",
+    bg: "office",
+  },
+  {
+    id: "cosmic",
+    name: "Cosmic",
+    icon: "🌌",
+    desc: "Galaxy space vibe",
+    effect: "cosmic",
+    bg: "galaxy",
+  },
+];
+
 export default function VideoMeetComponent() {
   const navigate = useNavigate();
   const params = useParams();
@@ -156,6 +211,11 @@ export default function VideoMeetComponent() {
 
   const meetingCode =
     params.url || window.location.pathname.replace(/^\//, "") || "room";
+
+  const handleSelectSimpleEffect = (item) => {
+    setVideoEffect(item.effect);
+    setVirtualBg(item.bg);
+  };
 
   /* =====================================================
      REFS
@@ -2291,11 +2351,11 @@ export default function VideoMeetComponent() {
                     </span>
                   </div>
 
-                  {/* Effects / Virtual Background Toggle */}
-                  <div className="flex flex-col items-center gap-1">
-                    <Tooltip title="Virtual Backgrounds & Camera Filters">
+                  {/* Effects / Virtual Background Toggle with Floating Popover */}
+                  <div className="relative flex flex-col items-center gap-1">
+                    <Tooltip title="Background & Blur Effects">
                       <IconButton
-                        onClick={() => setShowEffectsModal(true)}
+                        onClick={() => setShowEffectsModal((prev) => !prev)}
                         sx={{
                           width: "50px",
                           height: "50px",
@@ -2324,6 +2384,76 @@ export default function VideoMeetComponent() {
                     <span className="text-[10px] font-medium text-slate-300">
                       Effects
                     </span>
+
+                    {/* ================= COMPACT USER-FRIENDLY EFFECTS POPOVER ================= */}
+                    {showEffectsModal && (
+                      <div className="absolute bottom-[66px] left-1/2 -translate-x-1/2 z-50 w-[290px] sm:w-[320px] rounded-2xl border border-white/20 bg-slate-950/95 p-3.5 shadow-[0_20px_60px_rgba(0,0,0,0.85)] backdrop-blur-2xl animate-fadeIn">
+                        {/* Popover Header */}
+                        <div className="flex items-center justify-between border-b border-white/10 pb-2.5 mb-2.5">
+                          <div className="flex items-center gap-1.5">
+                            <AutoFixHighIcon
+                              sx={{ fontSize: 16, color: "#c084fc" }}
+                            />
+                            <span className="text-xs font-bold text-white">
+                              Visual Effects
+                            </span>
+                          </div>
+                          <button
+                            onClick={() => setShowEffectsModal(false)}
+                            className="text-slate-400 hover:text-white transition p-1 rounded-md hover:bg-white/10 text-xs font-bold"
+                          >
+                            ✕
+                          </button>
+                        </div>
+
+                        {/* Grid of 6 Friendly Presets */}
+                        <div className="grid grid-cols-2 gap-2">
+                          {SIMPLE_EFFECTS.map((item) => {
+                            const isActive =
+                              (item.id === "none" &&
+                                videoEffect === "none" &&
+                                virtualBg === "none") ||
+                              (item.id === "blur-soft" &&
+                                videoEffect === "blur-soft") ||
+                              (item.id === "blur-deep" &&
+                                videoEffect === "blur-deep") ||
+                              (item.id === "studio" &&
+                                videoEffect === "studio") ||
+                              (item.id === "office" &&
+                                virtualBg === "office") ||
+                              (item.id === "cosmic" &&
+                                (virtualBg === "galaxy" ||
+                                  videoEffect === "cosmic"));
+
+                            return (
+                              <button
+                                key={item.id}
+                                type="button"
+                                onClick={() => handleSelectSimpleEffect(item)}
+                                className={`flex items-center gap-2 p-2 rounded-xl border text-left transition-all duration-150 active:scale-95 ${
+                                  isActive
+                                    ? "border-purple-400 bg-purple-500/25 shadow-[0_0_12px_rgba(192,132,252,0.3)] text-white"
+                                    : "border-white/10 bg-slate-900/80 text-slate-300 hover:border-white/25 hover:bg-slate-800/80"
+                                }`}
+                              >
+                                <span className="text-base">{item.icon}</span>
+                                <div className="flex flex-col min-w-0">
+                                  <span className="text-xs font-semibold truncate leading-tight">
+                                    {item.name}
+                                  </span>
+                                  <span className="text-[10px] text-slate-400 truncate leading-tight">
+                                    {item.desc}
+                                  </span>
+                                </div>
+                                {isActive && (
+                                  <span className="ml-auto h-1.5 w-1.5 flex-shrink-0 rounded-full bg-emerald-400 shadow-[0_0_6px_#34d399]" />
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Screen Share */}
@@ -2637,165 +2767,6 @@ export default function VideoMeetComponent() {
               </aside>
             )}
           </main>
-
-          {/* ================= VIDEO BACKGROUND & EFFECTS MODAL ================= */}
-          {showEffectsModal && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-fadeIn">
-              <div className="relative flex w-full max-w-[680px] max-h-[90vh] flex-col overflow-hidden rounded-[26px] border border-white/20 bg-[#070e22]/95 p-6 shadow-2xl backdrop-blur-2xl">
-                {/* Modal Header */}
-                <div className="flex items-center justify-between border-b border-white/10 pb-4">
-                  <div className="flex items-center gap-2.5">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-purple-500/20 text-purple-300">
-                      <AutoFixHighIcon sx={{ fontSize: 20 }} />
-                    </div>
-                    <div>
-                      <h3 className="text-base font-bold text-white">
-                        Video Background & Effects
-                      </h3>
-                      <p className="text-xs text-slate-400">
-                        Choose your real-time camera filter and virtual
-                        ambiance
-                      </p>
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={() => setShowEffectsModal(false)}
-                    className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-white/10 hover:text-white"
-                  >
-                    <CloseIcon sx={{ fontSize: 20 }} />
-                  </button>
-                </div>
-
-                {/* Modal Body - Scrollable */}
-                <div className="flex-1 overflow-y-auto py-4 space-y-6 pr-1">
-                  {/* LIVE PREVIEW BOX */}
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-                        Live Camera Preview
-                      </span>
-                      <span className="rounded-full bg-purple-500/20 px-2.5 py-0.5 text-[11px] font-semibold text-purple-300 border border-purple-400/30">
-                        Active: {VIDEO_EFFECTS[videoEffect]?.name}
-                      </span>
-                    </div>
-
-                    <div
-                      className="relative aspect-video w-full max-w-[380px] mx-auto overflow-hidden rounded-2xl border border-white/20 shadow-xl"
-                      style={{
-                        background:
-                          virtualBg !== "none"
-                            ? VIRTUAL_BACKGROUNDS[virtualBg]?.backdrop
-                            : "#0f172a",
-                      }}
-                    >
-                      <video
-                        ref={(ref) => {
-                          if (ref && window.localStream) {
-                            ref.srcObject = window.localStream;
-                          }
-                        }}
-                        autoPlay
-                        muted
-                        playsInline
-                        className="h-full w-full object-cover"
-                        style={{
-                          filter: VIDEO_EFFECTS[videoEffect]?.filter || "none",
-                        }}
-                      />
-                      <div className="absolute bottom-2 left-2 rounded-md bg-black/60 px-2 py-0.5 text-[10px] font-semibold text-white backdrop-blur-md">
-                        {username.trim() || "You"} (Preview)
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 1. CAMERA FILTERS & BLUR */}
-                  <div>
-                    <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2.5">
-                      Camera Filter & Focus
-                    </h4>
-
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                      {Object.entries(VIDEO_EFFECTS).map(([id, effect]) => {
-                        const isSelected = videoEffect === id;
-
-                        return (
-                          <button
-                            key={id}
-                            type="button"
-                            onClick={() => setVideoEffect(id)}
-                            className={`flex flex-col items-start p-3 rounded-xl border text-left transition duration-200 active:scale-95 ${
-                              isSelected
-                                ? "border-purple-400 bg-purple-500/20 shadow-[0_0_15px_rgba(192,132,252,0.3)]"
-                                : "border-white/10 bg-slate-900/60 hover:border-white/25 hover:bg-slate-900"
-                            }`}
-                          >
-                            <span className="text-lg mb-1">{effect.icon}</span>
-                            <span className="text-xs font-bold text-white">
-                              {effect.name}
-                            </span>
-                            <span className="text-[10px] text-slate-400 mt-0.5">
-                              {effect.desc}
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* 2. VIRTUAL BACKGROUND AMBIANCE */}
-                  <div>
-                    <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2.5">
-                      Virtual Background Environment
-                    </h4>
-
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-                      {Object.entries(VIRTUAL_BACKGROUNDS).map(([id, bg]) => {
-                        const isSelected = virtualBg === id;
-
-                        return (
-                          <button
-                            key={id}
-                            type="button"
-                            onClick={() => setVirtualBg(id)}
-                            className={`flex flex-col items-start p-3 rounded-xl border text-left transition duration-200 active:scale-95 ${
-                              isSelected
-                                ? "border-indigo-400 bg-indigo-500/20 shadow-[0_0_15px_rgba(99,102,241,0.3)]"
-                                : "border-white/10 bg-slate-900/60 hover:border-white/25 hover:bg-slate-900"
-                            }`}
-                          >
-                            <span className="text-lg mb-1">{bg.icon}</span>
-                            <span className="text-xs font-bold text-white">
-                              {bg.name}
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Modal Footer */}
-                <div className="flex items-center justify-end border-t border-white/10 pt-4">
-                  <Button
-                    variant="contained"
-                    onClick={() => setShowEffectsModal(false)}
-                    sx={{
-                      borderRadius: "12px",
-                      px: 3,
-                      py: 1,
-                      textTransform: "none",
-                      fontWeight: 700,
-                      background:
-                        "linear-gradient(100deg, #c026d3 0%, #7c3aed 100%)",
-                    }}
-                  >
-                    Done & Apply
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       )}
     </div>
