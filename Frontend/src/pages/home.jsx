@@ -66,7 +66,6 @@ function HomeComponent() {
           <div className="homeOnline">
             <span></span>
             <SecurityIcon fontSize="inherit" style={{ fontSize: "14px" }} />
-            <span>Server Online</span>
           </div>
 
           {/* HISTORY */}
