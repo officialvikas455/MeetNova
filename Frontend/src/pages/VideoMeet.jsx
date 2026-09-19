@@ -1,7 +1,8 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useContext, useEffect, useRef, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import io from "socket.io-client";
 
-import { Badge, Button, IconButton, TextField } from "@mui/material";
+import { Badge, Button, IconButton, TextField, Tooltip } from "@mui/material";
 
 import VideocamIcon from "@mui/icons-material/Videocam";
 import VideocamOffIcon from "@mui/icons-material/VideocamOff";
@@ -13,13 +14,19 @@ import StopScreenShareIcon from "@mui/icons-material/StopScreenShare";
 import ChatIcon from "@mui/icons-material/Chat";
 import SecurityIcon from "@mui/icons-material/Security";
 import FullscreenIcon from "@mui/icons-material/Fullscreen";
+import FullscreenExitIcon from "@mui/icons-material/FullscreenExit";
 import KeyboardDoubleArrowRightIcon from "@mui/icons-material/KeyboardDoubleArrowRight";
 import GroupsIcon from "@mui/icons-material/Groups";
 import PersonIcon from "@mui/icons-material/Person";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import CheckIcon from "@mui/icons-material/Check";
+import GraphicEqIcon from "@mui/icons-material/GraphicEq";
+import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 
 import server from "../environment";
-import styles from "../styles/videoComponent.module.css";
 import Logo from "../components/Logo.jsx";
+import { AuthContext } from "../contexts/AuthContext.jsx";
 
 const server_url = server;
 
@@ -34,6 +41,13 @@ const peerConfigConnections = {
 };
 
 export default function VideoMeetComponent() {
+  const navigate = useNavigate();
+  const params = useParams();
+  const { userData } = useContext(AuthContext);
+
+  const meetingCode =
+    params.url || window.location.pathname.replace(/^\//, "") || "room";
+
   /* =====================================================
      REFS
   ===================================================== */
@@ -66,9 +80,111 @@ export default function VideoMeetComponent() {
   const [newMessages, setNewMessages] = useState(0);
 
   const [askForUsername, setAskForUsername] = useState(true);
-  const [username, setUsername] = useState("");
+  const [username, setUsername] = useState(() => {
+    return (
+      userData?.name ||
+      userData?.username ||
+      localStorage.getItem("username") ||
+      ""
+    );
+  });
 
   const [videos, setVideos] = useState([]);
+  const [copied, setCopied] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [audioLevel, setAudioLevel] = useState(0);
+
+  /* =====================================================
+     USER DATA SYNC
+  ===================================================== */
+
+  useEffect(() => {
+    if (!username && (userData?.name || userData?.username)) {
+      setUsername(userData.name || userData.username);
+    }
+  }, [userData]);
+
+  /* =====================================================
+     FULLSCREEN LISTENER
+  ===================================================== */
+
+  useEffect(() => {
+    const onFsChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener("fullscreenchange", onFsChange);
+    return () => document.removeEventListener("fullscreenchange", onFsChange);
+  }, []);
+
+  /* =====================================================
+     LIVE AUDIO METER (LOBBY ONLY)
+  ===================================================== */
+
+  useEffect(() => {
+    if (!askForUsername || !audio || !window.localStream) {
+      setAudioLevel(0);
+      return;
+    }
+
+    const audioTracks = window.localStream.getAudioTracks();
+    if (!audioTracks.length || !audioTracks[0].enabled) {
+      setAudioLevel(0);
+      return;
+    }
+
+    let isSubscribed = true;
+    let audioCtx = null;
+    let animId = null;
+
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+
+      audioCtx = new AudioCtx();
+      if (audioCtx.state === "suspended") {
+        audioCtx.resume();
+      }
+
+      const stream = new MediaStream([audioTracks[0]]);
+      const source = audioCtx.createMediaStreamSource(stream);
+      const analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 64;
+      analyser.smoothingTimeConstant = 0.4;
+      source.connect(analyser);
+
+      const dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+      const checkVolume = () => {
+        if (!isSubscribed) return;
+        analyser.getByteFrequencyData(dataArray);
+        let sum = 0;
+        for (let i = 0; i < dataArray.length; i++) {
+          sum += dataArray[i];
+        }
+        const avg = sum / dataArray.length;
+        const level = Math.min(100, Math.round((avg / 128) * 100));
+        setAudioLevel(level);
+
+        animId = requestAnimationFrame(checkVolume);
+      };
+
+      checkVolume();
+    } catch (e) {
+      console.log("Audio visualizer error:", e);
+    }
+
+    return () => {
+      isSubscribed = false;
+      if (animId) cancelAnimationFrame(animId);
+      if (audioCtx && audioCtx.state !== "closed") {
+        try {
+          audioCtx.close();
+        } catch (e) {
+          console.log(e);
+        }
+      }
+    };
+  }, [askForUsername, audio]);
 
   /* =====================================================
      PERMISSIONS
@@ -171,21 +287,26 @@ export default function VideoMeetComponent() {
           console.log("Unable to get initial media stream:", error);
         }
       }
+
+      setVideo(hasVideo);
+      setAudio(hasAudio);
     } catch (error) {
       console.log("Permission error:", error);
+      setVideo(false);
+      setAudio(false);
     }
   };
 
   /* =====================================================
-     MEDIA STATE EFFECT
+     MEDIA STATE EFFECT (ACTIVE CALL ONLY)
   ===================================================== */
 
   useEffect(() => {
-    if (video !== null && audio !== null) {
+    if (!askForUsername && video !== null && audio !== null) {
       getUserMedia();
       console.log("MEDIA STATE:", video, audio);
     }
-  }, [video, audio]);
+  }, [video, audio, askForUsername]);
 
   /* =====================================================
      DISPLAY MEDIA
@@ -668,16 +789,73 @@ export default function VideoMeetComponent() {
      VIDEO BUTTON
   ===================================================== */
 
-  const handleVideo = () => {
-    setVideo((prev) => !prev);
+  const handleVideo = async () => {
+    if (askForUsername) {
+      if (!videoAvailable) return;
+      const nextState = !video;
+      setVideo(nextState);
+
+      if (window.localStream) {
+        const videoTracks = window.localStream.getVideoTracks();
+        if (videoTracks.length > 0) {
+          videoTracks.forEach((track) => {
+            track.enabled = nextState;
+          });
+        } else if (nextState) {
+          try {
+            const vStream = await navigator.mediaDevices.getUserMedia({
+              video: true,
+            });
+            const vTrack = vStream.getVideoTracks()[0];
+            if (vTrack && window.localStream) {
+              window.localStream.addTrack(vTrack);
+              if (localVideoref.current) {
+                localVideoref.current.srcObject = window.localStream;
+              }
+            }
+          } catch (err) {
+            console.error("Failed to restore video track:", err);
+          }
+        }
+      }
+    } else {
+      setVideo((prev) => !prev);
+    }
   };
 
   /* =====================================================
      AUDIO BUTTON
   ===================================================== */
 
-  const handleAudio = () => {
-    setAudio((prev) => !prev);
+  const handleAudio = async () => {
+    if (askForUsername) {
+      if (!audioAvailable) return;
+      const nextState = !audio;
+      setAudio(nextState);
+
+      if (window.localStream) {
+        const audioTracks = window.localStream.getAudioTracks();
+        if (audioTracks.length > 0) {
+          audioTracks.forEach((track) => {
+            track.enabled = nextState;
+          });
+        } else if (nextState) {
+          try {
+            const aStream = await navigator.mediaDevices.getUserMedia({
+              audio: true,
+            });
+            const aTrack = aStream.getAudioTracks()[0];
+            if (aTrack && window.localStream) {
+              window.localStream.addTrack(aTrack);
+            }
+          } catch (err) {
+            console.error("Failed to restore audio track:", err);
+          }
+        }
+      }
+    } else {
+      setAudio((prev) => !prev);
+    }
   };
 
   /* =====================================================
@@ -778,14 +956,28 @@ export default function VideoMeetComponent() {
   ===================================================== */
 
   const getMedia = () => {
-    setVideo(videoAvailable);
-    setAudio(audioAvailable);
+    // Preserve user's lobby choices
+    if (window.localStream) {
+      window.localStream.getVideoTracks().forEach((track) => {
+        track.enabled = !!video;
+      });
+      window.localStream.getAudioTracks().forEach((track) => {
+        track.enabled = !!audio;
+      });
+    }
 
     connectToSocketServer();
   };
 
   const connect = () => {
-    if (!username.trim()) return;
+    const trimmed = username.trim();
+    if (!trimmed) return;
+
+    try {
+      localStorage.setItem("username", trimmed);
+    } catch (e) {
+      console.log(e);
+    }
 
     setAskForUsername(false);
 
@@ -797,13 +989,40 @@ export default function VideoMeetComponent() {
   ===================================================== */
 
   const handleFullscreen = () => {
-    if (!localVideoref.current) return;
+    const target =
+      document.getElementById("lobby-video-preview") || localVideoref.current;
+    if (!target) return;
 
     if (document.fullscreenElement) {
-      document.exitFullscreen();
+      document.exitFullscreen?.().catch(() => {});
     } else {
-      localVideoref.current.requestFullscreen?.();
+      target.requestFullscreen?.().catch(() => {});
     }
+  };
+
+  /* =====================================================
+     COPY LINK & NAVIGATION
+  ===================================================== */
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    } catch (err) {
+      console.log("Copy error:", err);
+    }
+  };
+
+  const handleBackToHome = () => {
+    try {
+      if (window.localStream) {
+        window.localStream.getTracks().forEach((track) => track.stop());
+      }
+    } catch (e) {
+      console.log(e);
+    }
+    navigate("/home");
   };
 
   /* =====================================================
@@ -818,12 +1037,12 @@ export default function VideoMeetComponent() {
         ===================================================== */
 
         <div
-          className="relative min-h-screen w-full overflow-hidden"
+          className="relative min-h-screen w-full flex flex-col justify-between overflow-x-hidden"
           style={{
             background: `
               radial-gradient(circle at 15% 20%, rgba(99, 102, 241, 0.28), transparent 38%),
               radial-gradient(circle at 85% 75%, rgba(139, 92, 246, 0.24), transparent 38%),
-              linear-gradient(180deg, rgba(5, 8, 31, 0.85) 0%, rgba(7, 11, 43, 0.92) 100%),
+              linear-gradient(180deg, rgba(5, 8, 31, 0.90) 0%, rgba(7, 11, 43, 0.95) 100%),
               url("/images/cosmic-bg.jpg")
             `,
             backgroundSize: "cover",
@@ -831,35 +1050,26 @@ export default function VideoMeetComponent() {
             backgroundAttachment: "fixed",
           }}
         >
-          {/* ================= BACKGROUND ================= */}
+          {/* ================= BACKGROUND EFFECTS ================= */}
 
           <div className="absolute inset-0 overflow-hidden pointer-events-none">
-            <div className="absolute -top-48 right-[-100px] h-[600px] w-[600px] rounded-full bg-purple-700/30 blur-[120px]" />
-
-            <div className="absolute bottom-[-250px] left-[-150px] h-[600px] w-[600px] rounded-full bg-blue-700/20 blur-[120px]" />
-
+            <div className="absolute -top-48 right-[-100px] h-[600px] w-[600px] rounded-full bg-purple-700/25 blur-[130px]" />
+            <div className="absolute bottom-[-250px] left-[-150px] h-[600px] w-[600px] rounded-full bg-blue-700/20 blur-[130px]" />
             <div className="absolute top-[35%] left-[45%] h-[400px] w-[400px] rounded-full bg-indigo-600/10 blur-[100px]" />
 
             {/* Stars */}
-
             <div className="absolute top-[8%] left-[35%] h-1 w-1 rounded-full bg-blue-400 shadow-[0_0_12px_#60a5fa]" />
-
             <div className="absolute top-[22%] left-[72%] h-1 w-1 rounded-full bg-purple-400 shadow-[0_0_12px_#c084fc]" />
-
             <div className="absolute top-[35%] left-[12%] h-1 w-1 rounded-full bg-blue-400" />
-
             <div className="absolute bottom-[30%] right-[15%] h-1 w-1 rounded-full bg-purple-400" />
-
             <div className="absolute bottom-[15%] left-[30%] h-1 w-1 rounded-full bg-blue-400" />
 
-            {/* Diagonal light */}
+            {/* Diagonal ambient light */}
+            <div className="absolute -top-32 right-[12%] h-[700px] w-[90px] rotate-[32deg] bg-gradient-to-b from-purple-500/40 via-purple-600/10 to-transparent blur-2xl" />
 
-            <div className="absolute -top-32 right-[12%] h-[700px] w-[90px] rotate-[32deg] bg-gradient-to-b from-purple-500/50 via-purple-600/10 to-transparent blur-2xl" />
-
-            {/* Grid */}
-
+            {/* Subtle Grid */}
             <div
-              className="absolute inset-0 opacity-[0.08]"
+              className="absolute inset-0 opacity-[0.06]"
               style={{
                 backgroundImage:
                   "linear-gradient(rgba(255,255,255,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.08) 1px, transparent 1px)",
@@ -870,146 +1080,247 @@ export default function VideoMeetComponent() {
 
           {/* ================= NAVBAR ================= */}
 
-          <div className="relative z-20 flex items-center justify-between px-6 py-5 md:px-10 lg:px-12">
-            {/* Logo */}
-            <Logo size="lg" to="/" />
+          <header className="relative z-20 flex flex-wrap items-center justify-between gap-4 px-5 py-4 md:px-10 lg:px-12 border-b border-white/[0.07] bg-slate-950/40 backdrop-blur-md">
+            {/* Left: Back + Logo */}
+            <div className="flex items-center gap-3 sm:gap-4">
+              <button
+                onClick={handleBackToHome}
+                className="flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.05] px-3.5 py-1.5 text-xs font-medium text-slate-300 backdrop-blur-xl transition hover:border-white/30 hover:bg-white/[0.12] hover:text-white"
+                title="Leave lobby and return to home"
+              >
+                <ArrowBackIcon sx={{ fontSize: 16 }} />
+                <span className="hidden sm:inline">Leave Lobby</span>
+              </button>
 
-            {/* Secure */}
+              <div className="h-4 w-px bg-white/15 hidden sm:block" />
 
-            <div className="flex items-center gap-3 rounded-full border border-white/15 bg-white/[0.05] px-4 py-2.5 backdrop-blur-xl shadow-lg md:px-5">
-              <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-emerald-400 shadow-[0_0_12px_#34d399]" />
-
-              <span className="hidden text-xs font-medium text-slate-200 sm:block">
-                Secure Connection
-              </span>
-
-              <SecurityIcon className="text-slate-200" fontSize="small" />
+              <Logo size="sm" to="/home" subtitle="MEETING LOBBY" />
             </div>
-          </div>
 
-          {/* ================= MAIN ================= */}
+            {/* Right: Room info + Encrypted Status */}
+            <div className="flex items-center gap-2.5 sm:gap-3">
+              {/* Room pill with copy link */}
+              <div className="flex items-center gap-2 rounded-full border border-white/15 bg-slate-900/70 px-3.5 py-1.5 backdrop-blur-xl shadow-sm">
+                <span className="text-[11px] uppercase tracking-wider text-slate-400 font-mono">
+                  Room
+                </span>
+                <span className="max-w-[140px] sm:max-w-[200px] truncate text-xs font-semibold text-indigo-200 font-mono">
+                  {meetingCode}
+                </span>
+                <button
+                  onClick={handleCopyLink}
+                  className={`flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-medium transition ${
+                    copied
+                      ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
+                      : "bg-white/10 text-slate-200 hover:bg-white/20 border border-white/10"
+                  }`}
+                  title="Copy meeting invite link"
+                >
+                  {copied ? (
+                    <CheckIcon sx={{ fontSize: 13, color: "#34d399" }} />
+                  ) : (
+                    <ContentCopyIcon sx={{ fontSize: 13 }} />
+                  )}
+                  <span>{copied ? "Copied!" : "Copy Link"}</span>
+                </button>
+              </div>
 
-          <div className="relative z-10 flex min-h-[calc(100vh-90px)] items-center justify-center px-5 pb-10 md:px-8">
-            <div className="relative flex w-full max-w-[1250px] flex-col overflow-hidden rounded-[28px] border border-white/15 bg-slate-900/50 p-6 shadow-[0_30px_100px_rgba(0,0,0,0.55)] backdrop-blur-2xl md:p-8 lg:flex-row lg:p-10">
-              {/* Glow */}
+              {/* Security badge */}
+              <div className="hidden md:flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1.5 backdrop-blur-xl">
+                <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_10px_#34d399]" />
+                <span className="text-xs font-medium text-emerald-300">
+                  Encrypted
+                </span>
+                <SecurityIcon className="text-emerald-400" sx={{ fontSize: 15 }} />
+              </div>
+            </div>
+          </header>
 
-              <div className="absolute -right-40 -top-40 h-[500px] w-[500px] rounded-full bg-purple-600/15 blur-[100px]" />
+          {/* ================= MAIN LOBBY CARD ================= */}
 
-              <div className="absolute -bottom-40 -left-40 h-[500px] w-[500px] rounded-full bg-blue-600/10 blur-[100px]" />
+          <main className="relative z-10 flex flex-1 items-center justify-center px-4 py-6 sm:px-6 md:px-8 lg:px-12">
+            <div className="relative flex w-full max-w-[1240px] flex-col overflow-hidden rounded-[28px] sm:rounded-[32px] border border-white/15 bg-slate-900/55 p-6 shadow-[0_30px_100px_rgba(0,0,0,0.6)] backdrop-blur-2xl sm:p-8 lg:flex-row lg:p-10 gap-8 lg:gap-12 items-center">
+              {/* Internal ambient glow */}
+              <div className="absolute -right-40 -top-40 h-[500px] w-[500px] rounded-full bg-purple-600/15 blur-[100px] pointer-events-none" />
+              <div className="absolute -bottom-40 -left-40 h-[500px] w-[500px] rounded-full bg-blue-600/10 blur-[100px] pointer-events-none" />
 
-              {/* ================= LEFT ================= */}
+              {/* ================= LEFT COLUMN: DETAILS & FORM ================= */}
 
-              <div className="relative z-10 flex w-full flex-1 flex-col justify-center px-2 py-8 md:px-5 lg:py-12">
-                <div className="max-w-[520px]">
-                  <div className="mb-5 flex items-center gap-2">
-                    <span className="h-1.5 w-1.5 rounded-full bg-blue-400 shadow-[0_0_10px_#60a5fa]" />
-
-                    <span className="text-xs font-bold uppercase tracking-[0.18em] text-blue-400">
-                      Video Conference
-                    </span>
+              <div className="relative z-10 flex w-full flex-1 flex-col justify-center">
+                <div className="max-w-[500px] w-full mx-auto lg:mx-0">
+                  {/* Category Pill */}
+                  <div className="inline-flex items-center gap-2 rounded-full border border-indigo-500/30 bg-indigo-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-indigo-300">
+                    <span className="h-1.5 w-1.5 rounded-full bg-indigo-400 shadow-[0_0_8px_#818cf8] animate-pulse" />
+                    MeetNova Conference
                   </div>
 
-                  <h2 className="text-3xl font-extrabold leading-[1.1] tracking-tight text-white sm:text-5xl md:text-[52px]">
-                    Enter into Lobby
-                  </h2>
+                  <h1 className="mt-4 text-3xl font-extrabold tracking-tight text-white sm:text-4xl lg:text-[46px] leading-[1.15]">
+                    Ready to join?
+                  </h1>
 
-                  <p className="mt-6 max-w-[480px] text-base leading-7 text-slate-400 md:text-lg">
-                    Check your camera and microphone, then enter a username to
-                    join the meeting.
+                  <p className="mt-2.5 text-sm sm:text-base leading-relaxed text-slate-400">
+                    Check your camera and audio, set your display name, and step
+                    into the meeting.
                   </p>
 
-                  {/* Username */}
+                  {/* Permissions Warning Callout (if both blocked) */}
+                  {!videoAvailable && !audioAvailable && (
+                    <div className="mt-4 flex items-start gap-2.5 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-3.5 text-xs text-amber-200">
+                      <WarningAmberIcon
+                        sx={{ fontSize: 18, color: "#f59e0b", flexShrink: 0, mt: "1px" }}
+                      />
+                      <span>
+                        Camera and microphone access are blocked in your browser.
+                        You can still join to listen or allow permissions in the
+                        address bar.
+                      </span>
+                    </div>
+                  )}
 
-                  <div className="mt-9">
-                    <TextField
-                      id="username"
-                      label="Username"
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
-                      variant="outlined"
-                      fullWidth
-                      InputProps={{
-                        startAdornment: (
-                          <PersonIcon
-                            sx={{
-                              color: "#94a3b8",
-                              marginRight: "10px",
-                            }}
-                          />
-                        ),
-                      }}
-                      sx={{
-                        "& .MuiOutlinedInput-root": {
-                          borderRadius: "15px",
-                          backgroundColor: "rgba(15,23,42,0.55)",
-                          color: "white",
-                          fontSize: "1rem",
-                          height: "62px",
-
-                          "& fieldset": {
-                            borderColor: "rgba(148,163,184,0.65)",
+                  {/* Username Form */}
+                  <div className="mt-7 space-y-4">
+                    <div>
+                      <TextField
+                        id="username"
+                        label="Your Display Name"
+                        placeholder="e.g. Alex Morgan"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && username.trim()) {
+                            connect();
+                          }
+                        }}
+                        variant="outlined"
+                        fullWidth
+                        InputProps={{
+                          startAdornment: (
+                            <PersonIcon
+                              sx={{
+                                color: "#818cf8",
+                                marginRight: "10px",
+                              }}
+                            />
+                          ),
+                        }}
+                        sx={{
+                          "& .MuiOutlinedInput-root": {
+                            borderRadius: "16px",
+                            backgroundColor: "rgba(15,23,42,0.65)",
+                            color: "white",
+                            fontSize: "1rem",
+                            height: "60px",
+                            "& fieldset": {
+                              borderColor: "rgba(148,163,184,0.35)",
+                            },
+                            "&:hover fieldset": {
+                              borderColor: "rgba(129,140,248,0.7)",
+                            },
+                            "&.Mui-focused fieldset": {
+                              borderColor: "#6366f1",
+                              borderWidth: "1.5px",
+                              boxShadow: "0 0 15px rgba(99,102,241,0.25)",
+                            },
                           },
-
-                          "&:hover fieldset": {
-                            borderColor: "rgba(129,140,248,0.8)",
+                          "& .MuiInputLabel-root": {
+                            color: "rgba(148,163,184,0.8)",
                           },
-
-                          "&.Mui-focused fieldset": {
-                            borderColor: "#6366f1",
-                            borderWidth: "1.5px",
+                          "& .MuiInputLabel-root.Mui-focused": {
+                            color: "#818cf8",
                           },
-                        },
+                        }}
+                      />
+                      <div className="mt-1.5 flex items-center justify-between text-[11px] text-slate-400 px-1">
+                        <span>Press Enter to join directly</span>
+                        <span>{username.trim() ? "Ready" : "Name required"}</span>
+                      </div>
+                    </div>
 
-                        "& .MuiInputLabel-root": {
-                          color: "rgba(148,163,184,0.8)",
-                        },
+                    {/* Quick Media Pre-join Settings */}
+                    <div className="flex flex-wrap items-center gap-2.5 pt-1">
+                      {/* Mic Quick Toggle */}
+                      <button
+                        type="button"
+                        onClick={handleAudio}
+                        className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-medium transition border ${
+                          audio === true
+                            ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20"
+                            : "border-rose-500/30 bg-rose-500/10 text-rose-300 hover:bg-rose-500/20"
+                        }`}
+                        title="Click to toggle microphone"
+                      >
+                        {audio === true ? (
+                          <>
+                            <MicIcon sx={{ fontSize: 16 }} />
+                            <span>Mic is On</span>
+                            {audioLevel > 5 && (
+                              <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            <MicOffIcon sx={{ fontSize: 16 }} />
+                            <span>Mic is Muted</span>
+                          </>
+                        )}
+                      </button>
 
-                        "& .MuiInputLabel-root.Mui-focused": {
-                          color: "#818cf8",
-                        },
-                      }}
-                    />
+                      {/* Camera Quick Toggle */}
+                      <button
+                        type="button"
+                        onClick={handleVideo}
+                        className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-medium transition border ${
+                          video === true
+                            ? "border-indigo-500/30 bg-indigo-500/10 text-indigo-300 hover:bg-indigo-500/20"
+                            : "border-rose-500/30 bg-rose-500/10 text-rose-300 hover:bg-rose-500/20"
+                        }`}
+                        title="Click to toggle camera"
+                      >
+                        {video === true ? (
+                          <>
+                            <VideocamIcon sx={{ fontSize: 16 }} />
+                            <span>Camera is On</span>
+                          </>
+                        ) : (
+                          <>
+                            <VideocamOffIcon sx={{ fontSize: 16 }} />
+                            <span>Camera is Off</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
 
-                    {/* Connect */}
-
+                    {/* Connect Button */}
                     <Button
                       variant="contained"
                       onClick={connect}
                       disabled={!username.trim()}
                       fullWidth
                       sx={{
-                        mt: 3,
-                        height: "64px",
-                        borderRadius: "15px",
+                        mt: 2,
+                        height: "62px",
+                        borderRadius: "16px",
                         textTransform: "none",
                         fontSize: "1.05rem",
                         fontWeight: 700,
                         letterSpacing: "0.01em",
-
                         background:
                           "linear-gradient(100deg, #c026d3 0%, #7c3aed 45%, #2563eb 100%)",
-
                         boxShadow: "0 12px 35px rgba(99,102,241,0.35)",
-
                         "&:hover": {
                           background:
                             "linear-gradient(100deg, #d946ef 0%, #8b5cf6 45%, #3b82f6 100%)",
-
-                          boxShadow: "0 15px 40px rgba(99,102,241,0.5)",
-
+                          boxShadow: "0 15px 40px rgba(99,102,241,0.55)",
                           transform: "translateY(-2px)",
                         },
-
                         transition: "all 0.25s ease",
-
                         "&.Mui-disabled": {
                           background: "rgba(255,255,255,0.08)",
                           color: "rgba(255,255,255,0.3)",
                         },
                       }}
                     >
-                      <span>Connect</span>
-
+                      <span>Join Meeting</span>
                       <KeyboardDoubleArrowRightIcon
                         sx={{
                           marginLeft: "auto",
@@ -1018,102 +1329,274 @@ export default function VideoMeetComponent() {
                       />
                     </Button>
 
-                    {/* Secure */}
-
-                    <div className="mt-7 flex items-center justify-center gap-3 text-sm text-slate-400 md:justify-start">
-                      <SecurityIcon
-                        className="text-emerald-400"
-                        fontSize="small"
-                      />
-
-                      <span>Secure, encrypted connection</span>
+                    {/* Features row */}
+                    <div className="mt-5 flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-white/[0.08] text-[11px] text-slate-400">
+                      <div className="flex items-center gap-1.5">
+                        <SecurityIcon
+                          sx={{ fontSize: 14 }}
+                          className="text-emerald-400"
+                        />
+                        <span>End-to-End Encrypted</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <GraphicEqIcon
+                          sx={{ fontSize: 14 }}
+                          className="text-blue-400"
+                        />
+                        <span>HD Spatial Audio</span>
+                      </div>
+                      <div className="hidden sm:flex items-center gap-1.5 text-slate-500">
+                        <span>• Ultra-Low Latency</span>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* ================= VIDEO ================= */}
+              {/* ================= RIGHT COLUMN: VIDEO PREVIEW ================= */}
 
-              <div className="relative z-10 flex w-full flex-1 items-center justify-center">
+              <div className="relative z-10 flex w-full flex-1 flex-col items-center justify-center">
                 <div className="relative w-full max-w-[600px]">
-                  <div className="absolute -inset-5 rounded-[35px] bg-gradient-to-r from-blue-600/20 via-purple-600/30 to-fuchsia-600/20 blur-2xl" />
+                  {/* Subtle outer gradient halo */}
+                  <div className="absolute -inset-4 rounded-[30px] bg-gradient-to-r from-blue-600/15 via-purple-600/25 to-fuchsia-600/15 blur-2xl pointer-events-none" />
 
-                  <div className="relative aspect-video overflow-hidden rounded-[20px] border border-white/20 bg-slate-900 shadow-[0_25px_70px_rgba(0,0,0,0.55)]">
+                  {/* 16:9 Video Box */}
+                  <div
+                    id="lobby-video-preview"
+                    className="relative aspect-video w-full overflow-hidden rounded-[24px] border border-white/20 bg-slate-950 shadow-[0_25px_70px_rgba(0,0,0,0.65)]"
+                  >
+                    {/* Live Video Tag */}
                     <video
                       ref={localVideoref}
                       autoPlay
                       muted
                       playsInline
-                      className="h-full w-full object-cover"
+                      className={`h-full w-full object-cover transition-opacity duration-300 ${
+                        video && videoAvailable
+                          ? "opacity-100"
+                          : "opacity-0 pointer-events-none"
+                      }`}
                     />
 
-                    <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/20" />
+                    {/* Camera Off / Avatar State */}
+                    {(!video || !videoAvailable) && (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-b from-slate-950/95 via-slate-900/90 to-slate-950/95 backdrop-blur-md z-10">
+                        {/* Ambient decorative circle */}
+                        <div className="absolute h-48 w-48 rounded-full bg-indigo-500/10 blur-2xl pointer-events-none" />
 
-                    {/* You */}
+                        {/* Avatar */}
+                        <div
+                          className="relative flex h-24 w-24 sm:h-28 sm:w-28 items-center justify-center rounded-full text-3xl sm:text-4xl font-extrabold text-white transition-all duration-300 shadow-2xl"
+                          style={{
+                            background:
+                              "radial-gradient(circle at 35% 35%, #a855f7, #6366f1 65%, #1e1b4b 100%)",
+                            boxShadow:
+                              audio && audioLevel > 15
+                                ? "0 0 35px rgba(52, 211, 153, 0.55)"
+                                : "0 0 30px rgba(99, 102, 241, 0.35)",
+                            border:
+                              audio && audioLevel > 15
+                                ? "3px solid #34d399"
+                                : "2px solid rgba(165, 180, 252, 0.4)",
+                            transform:
+                              audio && audioLevel > 15 ? "scale(1.04)" : "scale(1)",
+                          }}
+                        >
+                          <span>
+                            {(username.trim()[0] || "Y").toUpperCase()}
+                          </span>
 
-                    <div className="absolute left-4 top-4 flex items-center gap-2 rounded-xl border border-white/10 bg-slate-950/70 px-3 py-2 backdrop-blur-xl">
-                      <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_10px_#34d399]" />
+                          {/* Voice pulse ring */}
+                          {audio && audioLevel > 15 && (
+                            <span className="absolute -inset-2.5 rounded-full border border-emerald-400/50 animate-ping pointer-events-none" />
+                          )}
+                        </div>
 
-                      <span className="text-sm font-medium text-white">
-                        {username || "You"}
+                        {/* Camera off label */}
+                        <div className="mt-4 flex items-center gap-1.5 rounded-full border border-white/10 bg-slate-900/80 px-3 py-1 text-xs text-slate-300">
+                          <VideocamOffIcon
+                            sx={{ fontSize: 15 }}
+                            className="text-rose-400"
+                          />
+                          <span>Camera is turned off</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Gradient Overlay for Controls contrast */}
+                    <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/30 z-15" />
+
+                    {/* Top Floating Badge: Username & Live Audio Activity */}
+                    <div className="absolute left-4 top-4 z-20 flex items-center gap-2.5 rounded-xl border border-white/15 bg-slate-950/75 px-3 py-1.5 backdrop-blur-xl shadow-lg">
+                      {/* Audio indicator */}
+                      {audio ? (
+                        <div className="flex items-center gap-1" title="Microphone Active">
+                          {audioLevel > 5 ? (
+                            <div className="flex items-end gap-0.5 h-3.5">
+                              <span
+                                className="w-1 bg-emerald-400 rounded-full transition-all duration-75"
+                                style={{
+                                  height: `${Math.max(4, Math.min(14, (audioLevel / 100) * 16))}px`,
+                                }}
+                              />
+                              <span
+                                className="w-1 bg-emerald-400 rounded-full transition-all duration-75"
+                                style={{
+                                  height: `${Math.max(6, Math.min(14, (audioLevel / 100) * 20))}px`,
+                                }}
+                              />
+                              <span
+                                className="w-1 bg-emerald-400 rounded-full transition-all duration-75"
+                                style={{
+                                  height: `${Math.max(3, Math.min(14, (audioLevel / 100) * 12))}px`,
+                                }}
+                              />
+                            </div>
+                          ) : (
+                            <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]" />
+                          )}
+                        </div>
+                      ) : (
+                        <span
+                          className="h-2 w-2 rounded-full bg-rose-500 shadow-[0_0_8px_#f43f5e]"
+                          title="Microphone Muted"
+                        />
+                      )}
+
+                      <span className="max-w-[130px] sm:max-w-[200px] truncate text-xs font-semibold text-white">
+                        {username.trim() || "You"}
                       </span>
                     </div>
 
-                    {/* Fullscreen */}
-
-                    <button
-                      onClick={handleFullscreen}
-                      className="absolute right-4 top-4 flex h-11 w-11 items-center justify-center rounded-xl border border-white/10 bg-black/40 text-white backdrop-blur-xl transition hover:bg-white/15"
+                    {/* Top-Right: Fullscreen Toggle */}
+                    <Tooltip
+                      title={isFullscreen ? "Exit Fullscreen" : "Fullscreen Preview"}
                     >
-                      <FullscreenIcon />
-                    </button>
-
-                    {/* Controls */}
-
-                    <div className="absolute bottom-5 left-1/2 flex -translate-x-1/2 items-center gap-3 rounded-[24px] border border-white/15 bg-slate-950/65 px-5 py-3 backdrop-blur-xl">
-                      {/* Mic */}
-
-                      <IconButton
-                        onClick={handleAudio}
-                        size="medium"
-                        style={{
-                          color: "white",
-                          width: "54px",
-                          height: "54px",
-                          background: "rgba(255,255,255,0.06)",
-                          border: "1px solid rgba(255,255,255,0.12)",
-                        }}
+                      <button
+                        onClick={handleFullscreen}
+                        className="absolute right-4 top-4 z-20 flex h-9 w-9 items-center justify-center rounded-xl border border-white/15 bg-black/40 text-white backdrop-blur-xl transition hover:bg-white/20"
                       >
-                        {audio === true ? <MicIcon /> : <MicOffIcon />}
-                      </IconButton>
-
-                      <div className="h-8 w-px bg-white/15" />
-
-                      {/* Camera */}
-
-                      <IconButton
-                        onClick={handleVideo}
-                        size="medium"
-                        style={{
-                          color: "white",
-                          width: "54px",
-                          height: "54px",
-                          background: "rgba(255,255,255,0.06)",
-                          border: "1px solid rgba(255,255,255,0.12)",
-                        }}
-                      >
-                        {video === true ? (
-                          <VideocamIcon />
+                        {isFullscreen ? (
+                          <FullscreenExitIcon sx={{ fontSize: 19 }} />
                         ) : (
-                          <VideocamOffIcon />
+                          <FullscreenIcon sx={{ fontSize: 19 }} />
                         )}
-                      </IconButton>
+                      </button>
+                    </Tooltip>
+
+                    {/* Bottom Floating Media Dock */}
+                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-3 rounded-full border border-white/20 bg-slate-950/80 px-4 py-2 backdrop-blur-xl shadow-2xl">
+                      {/* Mic Button */}
+                      <Tooltip
+                        title={
+                          audio
+                            ? "Turn off microphone"
+                            : "Turn on microphone"
+                        }
+                      >
+                        <IconButton
+                          onClick={handleAudio}
+                          size="medium"
+                          sx={{
+                            width: "50px",
+                            height: "50px",
+                            color: audio ? "#34d399" : "#fb7185",
+                            background: audio
+                              ? "rgba(16, 185, 129, 0.15)"
+                              : "rgba(244, 63, 94, 0.18)",
+                            border: audio
+                              ? "1px solid rgba(52, 211, 153, 0.4)"
+                              : "1px solid rgba(244, 63, 94, 0.45)",
+                            "&:hover": {
+                              background: audio
+                                ? "rgba(16, 185, 129, 0.25)"
+                                : "rgba(244, 63, 94, 0.3)",
+                              transform: "scale(1.05)",
+                            },
+                            transition: "all 0.2s ease",
+                            boxShadow:
+                              audio && audioLevel > 15
+                                ? "0 0 15px rgba(52, 211, 153, 0.4)"
+                                : "none",
+                          }}
+                        >
+                          {audio === true ? <MicIcon /> : <MicOffIcon />}
+                        </IconButton>
+                      </Tooltip>
+
+                      <div className="h-6 w-px bg-white/20" />
+
+                      {/* Camera Button */}
+                      <Tooltip
+                        title={
+                          video
+                            ? "Turn off camera"
+                            : "Turn on camera"
+                        }
+                      >
+                        <IconButton
+                          onClick={handleVideo}
+                          size="medium"
+                          sx={{
+                            width: "50px",
+                            height: "50px",
+                            color: video ? "#a5b4fc" : "#fb7185",
+                            background: video
+                              ? "rgba(99, 102, 241, 0.15)"
+                              : "rgba(244, 63, 94, 0.18)",
+                            border: video
+                              ? "1px solid rgba(129, 140, 248, 0.4)"
+                              : "1px solid rgba(244, 63, 94, 0.45)",
+                            "&:hover": {
+                              background: video
+                                ? "rgba(99, 102, 241, 0.25)"
+                                : "rgba(244, 63, 94, 0.3)",
+                              transform: "scale(1.05)",
+                            },
+                            transition: "all 0.2s ease",
+                          }}
+                        >
+                          {video === true ? (
+                            <VideocamIcon />
+                          ) : (
+                            <VideocamOffIcon />
+                          )}
+                        </IconButton>
+                      </Tooltip>
                     </div>
+                  </div>
+
+                  {/* Device Status Under Preview */}
+                  <div className="mt-3.5 flex items-center justify-center gap-2 text-xs text-slate-400">
+                    <span
+                      className={`h-2 w-2 rounded-full ${
+                        video && audio
+                          ? "bg-emerald-400 shadow-[0_0_8px_#34d399]"
+                          : !video && !audio
+                          ? "bg-rose-500"
+                          : "bg-amber-400 shadow-[0_0_8px_#f59e0b]"
+                      }`}
+                    />
+                    <span>
+                      {video && audio
+                        ? "Camera and microphone are active"
+                        : video && !audio
+                        ? "Microphone is muted"
+                        : !video && audio
+                        ? "Camera is off • Microphone is active"
+                        : "Microphone and camera are turned off"}
+                    </span>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
+          </main>
+
+          {/* ================= FOOTER ================= */}
+
+          <footer className="relative z-10 py-3 text-center text-xs text-slate-500 border-t border-white/[0.05]">
+            MeetNova • Next-Generation Video Collaboration
+          </footer>
         </div>
       ) : (
         /* =====================================================

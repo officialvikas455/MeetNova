@@ -11,7 +11,14 @@ const client = axios.create({
 });
 
 export const AuthProvider = ({ children }) => {
-  const [userData, setUserData] = useState(null);
+  const [userData, setUserData] = useState(() => {
+    try {
+      const stored = localStorage.getItem("user");
+      return stored ? JSON.parse(stored) : null;
+    } catch {
+      return null;
+    }
+  });
   const navigate = useNavigate();
 
   const handleRegister = async (name, username, password, email) => {
@@ -45,6 +52,10 @@ export const AuthProvider = ({ children }) => {
 
       if (request.status === HttpStatusCode.Ok) {
         localStorage.setItem("token", request.data.token);
+        localStorage.setItem("user", JSON.stringify(request.data.user));
+        if (request.data.user?.username || request.data.user?.name) {
+          localStorage.setItem("username", request.data.user.username || request.data.user.name);
+        }
         setUserData(request.data.user);
         navigate("/home"); // redirect after successful login
       }
@@ -55,6 +66,7 @@ export const AuthProvider = ({ children }) => {
 
   const handleLogout = () => {
     localStorage.removeItem("token");
+    localStorage.removeItem("user");
     setUserData(null);
     navigate("/");
   };
@@ -111,6 +123,10 @@ export const AuthProvider = ({ children }) => {
 
       if (response.status === 200 || response.status === HttpStatusCode.Ok) {
         localStorage.setItem("token", response.data.token);
+        localStorage.setItem("user", JSON.stringify(response.data.user));
+        if (response.data.user?.username || response.data.user?.name) {
+          localStorage.setItem("username", response.data.user.username || response.data.user.name);
+        }
         setUserData(response.data.user);
         navigate("/home");
         return response.data;
