@@ -33,6 +33,15 @@ import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import PushPinIcon from "@mui/icons-material/PushPin";
 import PushPinOutlinedIcon from "@mui/icons-material/PushPinOutlined";
 import EmojiEmotionsIcon from "@mui/icons-material/EmojiEmotions";
+import AttachFileIcon from "@mui/icons-material/AttachFile";
+import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
+import ImageIcon from "@mui/icons-material/Image";
+import DownloadIcon from "@mui/icons-material/Download";
+import DoneAllIcon from "@mui/icons-material/DoneAll";
+import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
+import GifBoxIcon from "@mui/icons-material/GifBox";
+import CropFreeIcon from "@mui/icons-material/CropFree";
+import ViewAgendaIcon from "@mui/icons-material/ViewAgenda";
 
 import server from "../environment";
 import Logo from "../components/Logo.jsx";
@@ -204,6 +213,25 @@ const SIMPLE_EFFECTS = [
   },
 ];
 
+/* =====================================================
+   WHATSAPP REACTION GIFS
+===================================================== */
+
+const WHATSAPP_GIFS = [
+  { id: "thumbsup", label: "Thumbs Up 👍", url: "https://media.giphy.com/media/111ebonMs90YLu/giphy.gif" },
+  { id: "clap", label: "Applause 👏", url: "https://media.giphy.com/media/l3q2XhfQ8oCkm1GhO/giphy.gif" },
+  { id: "wave", label: "Hello 👋", url: "https://media.giphy.com/media/xT9IgG50Fb7Mi0prBC/giphy.gif" },
+  { id: "lol", label: "LOL 😂", url: "https://media.giphy.com/media/10JhviFuU2gWD6/giphy.gif" },
+  { id: "party", label: "Party 🎉", url: "https://media.giphy.com/media/blSTtZehjAZ8I/giphy.gif" },
+  { id: "mindblown", label: "Mind Blown 🤯", url: "https://media.giphy.com/media/26ufdipQqU2lhNA4g/giphy.gif" },
+  { id: "fire", label: "Fire 🔥", url: "https://media.giphy.com/media/nrXif9YExO9EI/giphy.gif" },
+  { id: "deal", label: "Agreed ✅", url: "https://media.giphy.com/media/NEvPzZ8bd1V4Y/giphy.gif" },
+  { id: "dance", label: "Dance 💃", url: "https://media.giphy.com/media/14udF3WUwwGMaA/giphy.gif" },
+  { id: "cheers", label: "Cheers 🥂", url: "https://media.giphy.com/media/3oEjHV0z8S7WM4MwnK/giphy.gif" },
+  { id: "thinking", label: "Thinking 🤔", url: "https://media.giphy.com/media/a5viI92PAF89q/giphy.gif" },
+  { id: "shocked", label: "Shocked 😱", url: "https://media.giphy.com/media/5VKbvrjxpVJCM/giphy.gif" },
+];
+
 export default function VideoMeetComponent() {
   const navigate = useNavigate();
   const params = useParams();
@@ -267,11 +295,19 @@ export default function VideoMeetComponent() {
   const [videoEffect, setVideoEffect] = useState("none");
   const [virtualBg, setVirtualBg] = useState("none");
   const [showEffectsModal, setShowEffectsModal] = useState(false);
-  const [layoutMode, setLayoutMode] = useState("speaker"); // "speaker" (Zoom style: big user, small self) | "grid" (Gallery)
+  const [layoutMode, setLayoutMode] = useState("speaker"); // "speaker" | "gallery" | "sidebar" | "focus"
+  const [showLayoutMenu, setShowLayoutMenu] = useState(false);
   const [isSelfViewMinimized, setIsSelfViewMinimized] = useState(false);
   const [pinnedParticipant, setPinnedParticipant] = useState(null);
   const [participantNames, setParticipantNames] = useState({});
   const [elapsedTime, setElapsedTime] = useState(0);
+
+  // WhatsApp Chat States (GIFs, File Uploads, Lightbox)
+  const [showAttachMenu, setShowAttachMenu] = useState(false);
+  const [showGifPicker, setShowGifPicker] = useState(false);
+  const [previewMedia, setPreviewMedia] = useState(null);
+  const photoInputRef = useRef(null);
+  const docInputRef = useRef(null);
 
   const messagesEndRef = useRef(null);
 
@@ -1184,18 +1220,64 @@ export default function VideoMeetComponent() {
     }
   };
 
-  const sendMessage = (customText) => {
-    const textToSend =
-      typeof customText === "string" ? customText.trim() : message.trim();
-    if (!textToSend) return;
-
+  const sendMessage = (customPayload) => {
     if (!socketRef.current) return;
 
-    socketRef.current.emit("chat-message", textToSend, username);
-
-    if (typeof customText !== "string") {
-      setMessage("");
+    let payloadToSend = "";
+    if (typeof customPayload === "object" && customPayload !== null) {
+      payloadToSend = JSON.stringify(customPayload);
+    } else {
+      const textToSend =
+        typeof customPayload === "string" ? customPayload.trim() : message.trim();
+      if (!textToSend) return;
+      payloadToSend = textToSend;
+      if (typeof customPayload !== "string") {
+        setMessage("");
+      }
     }
+
+    socketRef.current.emit("chat-message", payloadToSend, username);
+  };
+
+  const handleFileUpload = (e, fileType) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // 3MB limit for fast socket transmission
+    if (file.size > 3 * 1024 * 1024) {
+      alert("File size exceeds 3MB limit for in-meeting chat. Please select a smaller file.");
+      e.target.value = "";
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result;
+      const formattedSize =
+        file.size > 1024 * 1024
+          ? `${(file.size / (1024 * 1024)).toFixed(1)} MB`
+          : `${Math.round(file.size / 1024)} KB`;
+
+      if (fileType === "image") {
+        sendMessage({
+          type: "image",
+          dataUrl: dataUrl,
+          fileName: file.name,
+          fileSize: formattedSize,
+        });
+      } else {
+        sendMessage({
+          type: "document",
+          dataUrl: dataUrl,
+          fileName: file.name,
+          fileSize: formattedSize,
+          fileExt: file.name.split(".").pop()?.toLowerCase() || "file",
+        });
+      }
+      setShowAttachMenu(false);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
   };
 
   const handleMessage = (e) => {
@@ -1286,10 +1368,143 @@ export default function VideoMeetComponent() {
   };
 
   /* =====================================================
-     CHAT MESSAGE LINK PARSER
+     CHAT MESSAGE PARSER (TEXT, GIF, PHOTO, DOC/PDF)
   ===================================================== */
 
-  const renderMessageContent = (text) => {
+  const parseMessagePayload = (rawData) => {
+    if (typeof rawData !== "string") {
+      return { type: "text", text: String(rawData || "") };
+    }
+    const trimmed = rawData.trim();
+    if (trimmed.startsWith('{"type":') || trimmed.startsWith("{\"type\":")) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (parsed && parsed.type) {
+          return parsed;
+        }
+      } catch (e) {
+        // Fall back to plain text
+      }
+    }
+    return { type: "text", text: rawData };
+  };
+
+  const renderMessageContent = (rawData) => {
+    const payload = parseMessagePayload(rawData);
+
+    // 1. GIF Reaction
+    if (payload.type === "gif") {
+      return (
+        <div className="overflow-hidden rounded-xl my-1 max-w-[240px]">
+          <img
+            src={payload.url}
+            alt={payload.label || "Reaction GIF"}
+            className="w-full h-auto max-h-[180px] object-cover rounded-xl shadow-md transition duration-200 hover:scale-105"
+            loading="lazy"
+          />
+          {payload.label && (
+            <div className="mt-1 text-[10px] text-slate-300 font-medium">
+              {payload.label}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // 2. Photo / Image Upload
+    if (payload.type === "image") {
+      return (
+        <div className="flex flex-col gap-1 my-1">
+          <div
+            onClick={() =>
+              setPreviewMedia({
+                url: payload.dataUrl,
+                name: payload.fileName || "Uploaded Photo",
+              })
+            }
+            className="relative group overflow-hidden rounded-xl cursor-pointer max-w-[240px] max-h-[200px] bg-black/40 border border-white/10"
+            title="Click to view full size"
+          >
+            <img
+              src={payload.dataUrl}
+              alt={payload.fileName || "Photo"}
+              className="w-full h-full object-cover rounded-xl transition duration-200 group-hover:scale-105"
+            />
+            <div className="absolute inset-0 bg-black/35 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-1.5">
+              <span className="rounded-full bg-black/60 px-2 py-1 text-[11px] font-semibold text-white backdrop-blur-sm">
+                🔍 Full View
+              </span>
+            </div>
+          </div>
+          <div className="flex items-center justify-between text-[10px] text-slate-300 px-0.5">
+            <span className="truncate max-w-[140px]" title={payload.fileName}>
+              {payload.fileName || "photo"}
+            </span>
+            <span className="text-slate-400">{payload.fileSize}</span>
+          </div>
+        </div>
+      );
+    }
+
+    // 3. Document or PDF Upload
+    if (payload.type === "document") {
+      const isPdf =
+        payload.fileExt === "pdf" ||
+        (payload.fileName && payload.fileName.toLowerCase().endsWith(".pdf"));
+
+      const handleDownloadDoc = (e) => {
+        e.stopPropagation();
+        const a = document.createElement("a");
+        a.href = payload.dataUrl;
+        a.download = payload.fileName || (isPdf ? "document.pdf" : "document");
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      };
+
+      return (
+        <div
+          onClick={handleDownloadDoc}
+          className="flex items-center gap-2.5 my-1 p-2.5 rounded-xl bg-black/30 hover:bg-black/45 transition cursor-pointer border border-white/10 max-w-[260px] group"
+          title="Click to download file"
+        >
+          <div
+            className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl transition group-hover:scale-105 ${
+              isPdf
+                ? "bg-rose-500/20 text-rose-400 border border-rose-500/30"
+                : "bg-sky-500/20 text-sky-400 border border-sky-500/30"
+            }`}
+          >
+            {isPdf ? (
+              <PictureAsPdfIcon sx={{ fontSize: 22 }} />
+            ) : (
+              <InsertDriveFileIcon sx={{ fontSize: 22 }} />
+            )}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div
+              className="text-xs font-semibold text-white truncate"
+              title={payload.fileName}
+            >
+              {payload.fileName || "document"}
+            </div>
+            <div className="text-[10px] text-slate-400 mt-0.5 flex items-center gap-1.5">
+              <span className="uppercase font-bold text-slate-300">
+                {payload.fileExt || (isPdf ? "PDF" : "DOC")}
+              </span>
+              <span>•</span>
+              <span>{payload.fileSize || "File"}</span>
+            </div>
+          </div>
+          <div className="flex h-7 w-7 items-center justify-center rounded-full bg-white/10 group-hover:bg-[#00a884] group-hover:text-white text-slate-300 transition">
+            <DownloadIcon sx={{ fontSize: 15 }} />
+          </div>
+        </div>
+      );
+    }
+
+    // 4. Default: Text message with hyperlinking
+    const text = payload.text || "";
     if (!text) return "";
     const urlRegex = /(https?:\/\/[^\s]+)/g;
     const parts = text.split(urlRegex);
@@ -1658,39 +1873,107 @@ export default function VideoMeetComponent() {
                 <span className="hidden sm:inline">Online</span>
               </div>
 
-              {/* Layout Switcher (Speaker vs Gallery View) */}
-              <Tooltip
-                title={
-                  layoutMode === "speaker"
-                    ? "Switch to Gallery Grid View"
-                    : "Switch to Zoom Speaker View"
-                }
-              >
-                <button
-                  onClick={() =>
-                    setLayoutMode((prev) =>
-                      prev === "speaker" ? "grid" : "speaker"
-                    )
-                  }
-                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-medium transition ${
-                    layoutMode === "speaker"
-                      ? "border-indigo-500/50 bg-indigo-500/25 text-indigo-200 shadow-[0_0_10px_rgba(99,102,241,0.25)]"
-                      : "border-white/10 bg-white/[0.04] text-slate-300 hover:bg-white/10 hover:text-white"
-                  }`}
-                >
-                  {layoutMode === "speaker" ? (
-                    <>
-                      <GridViewIcon sx={{ fontSize: 15 }} />
-                      <span className="hidden sm:inline">Gallery</span>
-                    </>
-                  ) : (
-                    <>
-                      <ViewSidebarIcon sx={{ fontSize: 15 }} />
-                      <span className="hidden sm:inline">Speaker</span>
-                    </>
-                  )}
-                </button>
-              </Tooltip>
+              {/* Multi-Grid Layout Switcher Menu */}
+              <div className="relative">
+                <Tooltip title="Choose Video Grid Layout">
+                  <button
+                    onClick={() => setShowLayoutMenu((prev) => !prev)}
+                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-white/10 bg-white/[0.04] text-xs font-medium text-slate-200 transition hover:bg-white/10 hover:border-indigo-400/40"
+                  >
+                    {layoutMode === "speaker" && (
+                      <ViewSidebarIcon sx={{ fontSize: 15, color: "#818cf8" }} />
+                    )}
+                    {layoutMode === "gallery" && (
+                      <GridViewIcon sx={{ fontSize: 15, color: "#34d399" }} />
+                    )}
+                    {layoutMode === "sidebar" && (
+                      <ViewAgendaIcon sx={{ fontSize: 15, color: "#38bdf8" }} />
+                    )}
+                    {layoutMode === "focus" && (
+                      <CropFreeIcon sx={{ fontSize: 15, color: "#f472b6" }} />
+                    )}
+                    <span className="hidden sm:inline capitalize">
+                      {layoutMode === "speaker"
+                        ? "Speaker"
+                        : layoutMode === "gallery"
+                        ? "Gallery"
+                        : layoutMode === "sidebar"
+                        ? "Sidebar"
+                        : "Focus"}
+                    </span>
+                    <span className="text-[9px] text-slate-400 ml-0.5">▼</span>
+                  </button>
+                </Tooltip>
+
+                {showLayoutMenu && (
+                  <>
+                    <div
+                      onClick={() => setShowLayoutMenu(false)}
+                      className="fixed inset-0 z-40"
+                    />
+                    <div className="absolute right-0 top-full mt-2 z-50 w-56 overflow-hidden rounded-2xl border border-white/15 bg-slate-950/95 p-1.5 shadow-2xl backdrop-blur-2xl animate-fadeIn">
+                      <div className="px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-white/10 mb-1">
+                        Select Grid View
+                      </div>
+                      {[
+                        {
+                          id: "speaker",
+                          label: "Speaker View",
+                          desc: "Zoom style: active speaker large",
+                          icon: (
+                            <ViewSidebarIcon sx={{ fontSize: 16, color: "#818cf8" }} />
+                          ),
+                        },
+                        {
+                          id: "gallery",
+                          label: "Gallery Grid",
+                          desc: "Equal symmetrical video tiles",
+                          icon: (
+                            <GridViewIcon sx={{ fontSize: 16, color: "#34d399" }} />
+                          ),
+                        },
+                        {
+                          id: "sidebar",
+                          label: "Sidebar Strip",
+                          desc: "Main stage + vertical filmstrip",
+                          icon: (
+                            <ViewAgendaIcon sx={{ fontSize: 16, color: "#38bdf8" }} />
+                          ),
+                        },
+                        {
+                          id: "focus",
+                          label: "Focus / Presentation",
+                          desc: "Immersive edge-to-edge view",
+                          icon: (
+                            <CropFreeIcon sx={{ fontSize: 16, color: "#f472b6" }} />
+                          ),
+                        },
+                      ].map((item) => (
+                        <button
+                          key={item.id}
+                          onClick={() => {
+                            setLayoutMode(item.id);
+                            setShowLayoutMenu(false);
+                          }}
+                          className={`flex w-full items-start gap-2.5 rounded-xl px-2.5 py-2 text-left transition ${
+                            layoutMode === item.id
+                              ? "bg-indigo-600/20 text-indigo-200 border border-indigo-500/30"
+                              : "text-slate-300 hover:bg-white/10 hover:text-white"
+                          }`}
+                        >
+                          <span className="mt-0.5">{item.icon}</span>
+                          <div>
+                            <div className="text-xs font-semibold">{item.label}</div>
+                            <div className="text-[10px] text-slate-400">
+                              {item.desc}
+                            </div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
 
               {/* Effects Modal Trigger in Header */}
               <Tooltip title="Video Background & Effects">
@@ -2095,8 +2378,276 @@ export default function VideoMeetComponent() {
                         );
                       })()}
                     </div>
+                  ) : layoutMode === "sidebar" ? (
+                    /* ================= SIDEBAR FILMSTRIP VIEW ================= */
+                    <div className="relative h-full w-full flex flex-col md:flex-row gap-3 overflow-hidden p-1">
+                      {(() => {
+                        const activeSpeaker =
+                          (pinnedParticipant &&
+                            videos.find((v) => v.socketId === pinnedParticipant)) ||
+                          videos[0];
+                        const peerDisplayName = activeSpeaker
+                          ? participantNames[activeSpeaker.socketId] || "Participant"
+                          : "Participant";
+                        const isPinned = pinnedParticipant === activeSpeaker?.socketId;
+
+                        return (
+                          <>
+                            {/* Left: Main Spotlight Stage (75% on desktop) */}
+                            <div className="relative flex-1 h-full min-h-[300px] overflow-hidden rounded-[24px] border border-white/15 bg-slate-950 shadow-2xl flex items-center justify-center">
+                              {activeSpeaker && (
+                                <>
+                                  <video
+                                    data-socket={activeSpeaker.socketId}
+                                    ref={(ref) => {
+                                      if (ref && activeSpeaker.stream) {
+                                        ref.srcObject = activeSpeaker.stream;
+                                      }
+                                    }}
+                                    autoPlay
+                                    playsInline
+                                    className="h-full w-full object-cover"
+                                  />
+                                  <div className="pointer-events-none absolute inset-0 -z-10 flex flex-col items-center justify-center bg-slate-900">
+                                    <div className="flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-tr from-indigo-500 via-purple-600 to-pink-500 text-3xl font-extrabold text-white shadow-2xl">
+                                      {(peerDisplayName[0] || "P").toUpperCase()}
+                                    </div>
+                                    <span className="mt-3 text-sm font-medium text-slate-300">
+                                      {peerDisplayName}
+                                    </span>
+                                  </div>
+
+                                  {/* Speaker Name Tag */}
+                                  <div className="absolute bottom-3.5 left-3.5 z-20 flex items-center gap-2 rounded-full border border-white/20 bg-black/75 px-3.5 py-1.5 backdrop-blur-xl shadow-xl">
+                                    <MicIcon sx={{ fontSize: 14, color: "#34d399" }} />
+                                    <span className="max-w-[160px] sm:max-w-[240px] truncate text-xs font-bold text-white">
+                                      {peerDisplayName}
+                                    </span>
+                                    {isPinned && (
+                                      <span className="rounded bg-amber-500/20 px-1.5 py-0.2 text-[9px] font-bold text-amber-300 border border-amber-500/30">
+                                        PINNED
+                                      </span>
+                                    )}
+                                  </div>
+
+                                  {/* Pin / Spotlight Action */}
+                                  <button
+                                    onClick={() =>
+                                      setPinnedParticipant((prev) =>
+                                        prev === activeSpeaker.socketId
+                                          ? null
+                                          : activeSpeaker.socketId
+                                      )
+                                    }
+                                    className={`absolute right-3.5 top-3.5 z-20 flex h-8 w-8 items-center justify-center rounded-full border backdrop-blur-xl transition ${
+                                      isPinned
+                                        ? "border-amber-400 bg-amber-400/25 text-amber-300"
+                                        : "border-white/15 bg-black/60 text-white/80 hover:bg-white/20 hover:text-white"
+                                    }`}
+                                    title={isPinned ? "Unpin Speaker" : "Pin Speaker"}
+                                  >
+                                    {isPinned ? (
+                                      <PushPinIcon sx={{ fontSize: 16 }} />
+                                    ) : (
+                                      <PushPinOutlinedIcon sx={{ fontSize: 16 }} />
+                                    )}
+                                  </button>
+                                </>
+                              )}
+                            </div>
+
+                            {/* Right: Vertical Filmstrip of Attendees + Local Stream */}
+                            <div className="flex md:flex-col gap-2.5 overflow-x-auto md:overflow-y-auto w-full md:w-[220px] lg:w-[260px] flex-shrink-0 p-0.5">
+                              {/* Local User Tile */}
+                              <div
+                                className={`relative aspect-video w-[160px] md:w-full flex-shrink-0 overflow-hidden rounded-xl border bg-slate-950 shadow-md ${
+                                  audio && audioLevel > 15
+                                    ? "border-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.3)]"
+                                    : "border-white/15"
+                                }`}
+                                style={{
+                                  background:
+                                    virtualBg !== "none"
+                                      ? VIRTUAL_BACKGROUNDS[virtualBg]?.backdrop
+                                      : "#020617",
+                                }}
+                              >
+                                <video
+                                  ref={(el) => {
+                                    localVideoref.current = el;
+                                    if (
+                                      el &&
+                                      window.localStream &&
+                                      el.srcObject !== window.localStream
+                                    ) {
+                                      el.srcObject = window.localStream;
+                                    }
+                                  }}
+                                  autoPlay
+                                  muted
+                                  playsInline
+                                  className={`h-full w-full object-cover transition-opacity duration-300 ${
+                                    video && videoAvailable
+                                      ? "opacity-100"
+                                      : "opacity-0 pointer-events-none"
+                                  }`}
+                                  style={{
+                                    filter: VIDEO_EFFECTS[videoEffect]?.filter || "none",
+                                  }}
+                                />
+                                {(!video || !videoAvailable) && (
+                                  <div className="absolute inset-0 flex items-center justify-center bg-slate-900">
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-600 text-sm font-bold text-white shadow">
+                                      {(username.trim()[0] || "Y").toUpperCase()}
+                                    </div>
+                                  </div>
+                                )}
+                                <div className="absolute bottom-1.5 left-1.5 z-20 flex items-center gap-1 rounded-full border border-white/10 bg-black/75 px-2 py-0.5 text-[10px] font-semibold text-white">
+                                  {audio ? (
+                                    <MicIcon sx={{ fontSize: 11, color: "#34d399" }} />
+                                  ) : (
+                                    <MicOffIcon sx={{ fontSize: 11, color: "#fb7185" }} />
+                                  )}
+                                  <span className="truncate max-w-[80px]">
+                                    {username.trim() || "You"} (You)
+                                  </span>
+                                </div>
+                              </div>
+
+                              {/* Remote Attendees */}
+                              {videos.map((peer, idx) => {
+                                const name =
+                                  participantNames[peer.socketId] || `User ${idx + 1}`;
+                                const isSelected = activeSpeaker?.socketId === peer.socketId;
+
+                                return (
+                                  <button
+                                    key={peer.socketId}
+                                    onClick={() => setPinnedParticipant(peer.socketId)}
+                                    className={`group relative aspect-video w-[160px] md:w-full flex-shrink-0 overflow-hidden rounded-xl border text-left transition hover:scale-[1.02] ${
+                                      isSelected
+                                        ? "border-indigo-400 ring-2 ring-indigo-500/40 shadow-lg"
+                                        : "border-white/15 bg-slate-950"
+                                    }`}
+                                    title={`Click to spotlight ${name}`}
+                                  >
+                                    <video
+                                      data-socket={peer.socketId}
+                                      ref={(ref) => {
+                                        if (ref && peer.stream) {
+                                          ref.srcObject = peer.stream;
+                                        }
+                                      }}
+                                      autoPlay
+                                      playsInline
+                                      className="h-full w-full object-cover"
+                                    />
+                                    <div className="pointer-events-none absolute inset-0 -z-10 flex items-center justify-center bg-slate-900">
+                                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-purple-600 text-sm font-bold text-white">
+                                        {name[0]?.toUpperCase() || "U"}
+                                      </div>
+                                    </div>
+                                    <div className="absolute bottom-1.5 left-1.5 z-20 flex items-center gap-1 rounded-full border border-white/10 bg-black/75 px-2 py-0.5 text-[10px] font-semibold text-white">
+                                      <span className="truncate max-w-[90px]">{name}</span>
+                                      {isSelected && (
+                                        <span className="text-[8px] font-bold text-amber-300">
+                                          ★
+                                        </span>
+                                      )}
+                                    </div>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </>
+                        );
+                      })()}
+                    </div>
+                  ) : layoutMode === "focus" ? (
+                    /* ================= FOCUS / PRESENTATION VIEW ================= */
+                    <div className="relative h-full w-full flex items-center justify-center overflow-hidden rounded-[24px] bg-black">
+                      {(() => {
+                        const activeSpeaker =
+                          (pinnedParticipant &&
+                            videos.find((v) => v.socketId === pinnedParticipant)) ||
+                          videos[0];
+                        const peerDisplayName = activeSpeaker
+                          ? participantNames[activeSpeaker.socketId] || "Participant"
+                          : "Participant";
+
+                        return (
+                          <div className="relative h-full w-full flex items-center justify-center overflow-hidden">
+                            {activeSpeaker && (
+                              <>
+                                <video
+                                  data-socket={activeSpeaker.socketId}
+                                  ref={(ref) => {
+                                    if (ref && activeSpeaker.stream) {
+                                      ref.srcObject = activeSpeaker.stream;
+                                    }
+                                  }}
+                                  autoPlay
+                                  playsInline
+                                  className="h-full w-full object-contain"
+                                />
+                                <div className="pointer-events-none absolute inset-0 -z-10 flex flex-col items-center justify-center bg-slate-950">
+                                  <div className="flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-tr from-indigo-500 to-purple-600 text-3xl font-bold text-white shadow-xl">
+                                    {(peerDisplayName[0] || "P").toUpperCase()}
+                                  </div>
+                                  <span className="mt-3 text-sm font-medium text-slate-300">
+                                    {peerDisplayName}
+                                  </span>
+                                </div>
+
+                                {/* Subtle Name Tag */}
+                                <div className="absolute bottom-3 left-3 z-20 flex items-center gap-2 rounded-full border border-white/15 bg-black/60 px-3 py-1 backdrop-blur-md text-xs text-white">
+                                  <span className="font-semibold">{peerDisplayName}</span>
+                                  <span className="text-[10px] text-pink-400 font-bold uppercase tracking-wider">
+                                    Focus
+                                  </span>
+                                </div>
+
+                                {/* Floating Mini PiP of Self in Focus View */}
+                                <div className="absolute top-3 right-3 z-30 w-32 aspect-video overflow-hidden rounded-xl border border-white/20 bg-slate-950 shadow-2xl">
+                                  <video
+                                    ref={(el) => {
+                                      localVideoref.current = el;
+                                      if (
+                                        el &&
+                                        window.localStream &&
+                                        el.srcObject !== window.localStream
+                                      ) {
+                                        el.srcObject = window.localStream;
+                                      }
+                                    }}
+                                    autoPlay
+                                    muted
+                                    playsInline
+                                    className={`h-full w-full object-cover transition-opacity duration-300 ${
+                                      video && videoAvailable
+                                        ? "opacity-100"
+                                        : "opacity-0 pointer-events-none"
+                                    }`}
+                                    style={{
+                                      filter: VIDEO_EFFECTS[videoEffect]?.filter || "none",
+                                    }}
+                                  />
+                                  {(!video || !videoAvailable) && (
+                                    <div className="absolute inset-0 flex items-center justify-center bg-slate-900">
+                                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-600 text-xs font-bold text-white">
+                                        {(username.trim()[0] || "Y").toUpperCase()}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        );
+                      })()}
+                    </div>
                   ) : (
-                    /* ================= ZOOM GALLERY / GRID VIEW ================= */
+                    /* ================= GALLERY / GRID VIEW ================= */
                     <div
                       className={`h-full w-full grid gap-3.5 ${
                         videos.length === 1
@@ -2519,115 +3070,118 @@ export default function VideoMeetComponent() {
               />
             )}
 
-            {/* ================= USER-FRIENDLY IN-CALL CHAT PANEL ================= */}
+            {/* ================= WHATSAPP-STYLE IN-CALL CHAT PANEL ================= */}
             {showModal && (
-              <aside className="fixed inset-y-0 right-0 z-50 flex w-full sm:w-[360px] md:relative md:inset-auto md:z-30 md:w-[350px] lg:w-[380px] flex-col overflow-hidden border-l border-white/10 md:border md:rounded-[24px] bg-[#070e22]/98 shadow-2xl backdrop-blur-2xl transition-all duration-300">
-                {/* Chat Header */}
-                <div className="flex items-center justify-between border-b border-white/10 px-4 py-3 bg-white/[0.03]">
-                  <div className="flex items-center gap-2.5">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-indigo-500/20 text-indigo-400">
-                      <ChatIcon sx={{ fontSize: 18 }} />
+              <aside className="fixed inset-y-0 right-0 z-50 flex w-full sm:w-[380px] md:relative md:inset-auto md:z-30 md:w-[360px] lg:w-[390px] flex-col overflow-hidden border-l border-white/10 md:border md:rounded-[24px] bg-[#0b141a] shadow-2xl transition-all duration-300">
+                {/* WhatsApp Chat Header */}
+                <div className="flex items-center justify-between border-b border-white/[0.08] px-3.5 py-2.5 bg-[#202c33] text-white select-none">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="relative flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-[#00a884] text-white font-bold text-sm shadow-md">
+                      <span>MN</span>
+                      <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-400 ring-2 ring-[#202c33]" />
                     </div>
-                    <div>
-                      <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                        In-Call Messages
-                        <span className="rounded-full bg-indigo-500/20 px-2 py-0.5 text-[10px] font-semibold text-indigo-300 border border-indigo-500/30">
-                          {videos.length + 1}
-                        </span>
+                    <div className="min-w-0">
+                      <h3 className="text-sm font-bold text-[#e9edef] truncate flex items-center gap-1.5">
+                        MeetNova Chat
                       </h3>
-                      <p className="text-[10px] text-slate-400">
-                        Chat with meeting participants
+                      <p className="text-[11px] text-[#8696a0] truncate">
+                        {videos.length + 1} participants online
                       </p>
                     </div>
                   </div>
 
-                  <Tooltip title="Close Chat">
-                    <button
-                      onClick={closeChat}
-                      className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 transition hover:bg-white/10 hover:text-white"
-                      aria-label="Close Chat"
-                    >
-                      <CloseIcon sx={{ fontSize: 18 }} />
-                    </button>
-                  </Tooltip>
+                  <div className="flex items-center gap-1">
+                    <Tooltip title="Close Chat">
+                      <button
+                        onClick={closeChat}
+                        className="flex h-8 w-8 items-center justify-center rounded-full text-[#aebac1] transition hover:bg-white/10 hover:text-white"
+                        aria-label="Close Chat"
+                      >
+                        <CloseIcon sx={{ fontSize: 19 }} />
+                      </button>
+                    </Tooltip>
+                  </div>
                 </div>
 
-                {/* Privacy Context Notice */}
-                <div className="flex items-center gap-2 border-b border-white/[0.08] bg-slate-950/70 px-4 py-2 text-[11px] text-slate-400">
-                  <LockIcon sx={{ fontSize: 13, color: "#818cf8", flexShrink: 0 }} />
-                  <span>
-                    Messages are only visible during the call and disappear after you leave.
-                  </span>
+                {/* WhatsApp End-to-End Encryption Banner */}
+                <div className="mx-auto my-2 flex items-center justify-center gap-1.5 rounded-lg bg-[#182229] px-3 py-1 text-center text-[10.5px] text-[#ffd279] shadow-sm max-w-[92%] border border-[#ffd279]/15 select-none">
+                  <LockIcon sx={{ fontSize: 11, color: "#ffd279" }} />
+                  <span>Messages and files are end-to-end secured in this call.</span>
                 </div>
 
-                {/* Messages Feed */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-3.5">
+                {/* Messages Feed (WhatsApp Dark Wallpaper) */}
+                <div
+                  className="flex-1 overflow-y-auto p-3 space-y-2 relative"
+                  style={{
+                    backgroundColor: "#0b141a",
+                    backgroundImage: `radial-gradient(rgba(255,255,255,0.035) 1px, transparent 1px)`,
+                    backgroundSize: "20px 20px",
+                  }}
+                >
                   {messages.length !== 0 ? (
                     messages.map((item, index) => {
                       const isSelf = item.isSelf;
                       const senderName = item.sender || "Participant";
-                      const initial = senderName[0]?.toUpperCase() || "P";
 
                       return (
                         <div
                           key={index}
-                          className={`flex flex-col ${
+                          className={`flex flex-col w-full my-0.5 ${
                             isSelf ? "items-end" : "items-start"
                           }`}
                         >
-                          {/* Sender Info & Timestamp */}
+                          {/* WhatsApp Chat Bubble */}
                           <div
-                            className={`flex items-center gap-1.5 mb-1 text-[11px] ${
-                              isSelf ? "flex-row-reverse" : "flex-row"
+                            className={`relative max-w-[85%] sm:max-w-[80%] px-3.5 py-2 rounded-2xl shadow-[0_1px_2px_rgba(0,0,0,0.3)] transition-all ${
+                              isSelf
+                                ? "bg-[#005c4b] text-[#e9edef] rounded-tr-xs border border-emerald-500/20"
+                                : "bg-[#202c33] text-[#e9edef] rounded-tl-xs border border-white/[0.04]"
                             }`}
                           >
-                            <span
-                              className={`font-semibold ${
-                                isSelf ? "text-indigo-300" : "text-emerald-400"
-                              }`}
-                            >
-                              {isSelf ? "You" : senderName}
-                            </span>
-                            <span className="text-[10px] text-slate-500">
-                              {item.time || ""}
-                            </span>
-                          </div>
-
-                          {/* Message Bubble */}
-                          <div className="flex items-end gap-2 max-w-[85%]">
+                            {/* Contact Name (Left side / Remote User only) */}
                             {!isSelf && (
-                              <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-slate-800 text-[10px] font-bold text-slate-200 border border-white/10">
-                                {initial}
+                              <div className="text-[11.5px] font-bold text-[#53bdeb] mb-0.5 select-none flex items-center gap-1">
+                                <span>{senderName}</span>
                               </div>
                             )}
 
+                            {/* Message Content: Text, GIF, Photo, or PDF/Doc */}
+                            <div className="text-[13px] leading-relaxed break-words">
+                              {renderMessageContent(item.data)}
+                            </div>
+
+                            {/* Timestamp & WhatsApp Double Checkmark */}
                             <div
-                              className={`rounded-2xl px-3.5 py-2 text-sm leading-relaxed break-words shadow-md ${
-                                isSelf
-                                  ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-tr-xs"
-                                  : "bg-slate-800/90 border border-white/10 text-slate-200 rounded-tl-xs backdrop-blur-md"
+                              className={`flex items-center justify-end gap-1 mt-1 text-[10px] text-[#8696a0] select-none ${
+                                isSelf ? "ml-auto" : "ml-auto"
                               }`}
                             >
-                              {renderMessageContent(item.data)}
+                              <span>{item.time || ""}</span>
+                              {isSelf && (
+                                <DoneAllIcon
+                                  sx={{ fontSize: 14, color: "#53bdeb" }}
+                                  titleAccess="Read / Delivered"
+                                />
+                              )}
                             </div>
                           </div>
                         </div>
                       );
                     })
                   ) : (
-                    /* Friendly Empty State with One-Click Starters */
+                    /* WhatsApp Empty State with 1-Click Starters */
                     <div className="flex h-full flex-col items-center justify-center text-center p-4">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.04] text-indigo-400 mb-2 shadow-inner">
-                        <EmojiEmotionsIcon sx={{ fontSize: 24 }} />
+                      <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-[#202c33] text-[#00a884] mb-3 shadow-lg">
+                        <EmojiEmotionsIcon sx={{ fontSize: 28 }} />
                       </div>
-                      <h4 className="text-sm font-semibold text-white">
-                        No messages yet
+                      <h4 className="text-sm font-semibold text-[#e9edef]">
+                        WhatsApp Meeting Chat
                       </h4>
-                      <p className="mt-1 text-xs text-slate-400 max-w-[220px]">
-                        Start the conversation or tap a quick message below:
+                      <p className="mt-1 text-xs text-[#8696a0] max-w-[240px]">
+                        Send messages, reaction GIFs, photos, or documents to everyone in the room:
                       </p>
 
-                      {/* 1-Click Starter Quick Chips */}
+                      {/* 1-Click Quick Message Starters */}
                       <div className="mt-4 flex flex-col gap-2 w-full max-w-[240px]">
                         {[
                           { text: "👋 Say Hello", msg: "Hello everyone! 👋" },
@@ -2637,7 +3191,7 @@ export default function VideoMeetComponent() {
                           <button
                             key={chip.text}
                             onClick={() => sendMessage(chip.msg)}
-                            className="flex items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-white/5 py-2 px-3 text-xs font-medium text-slate-300 transition hover:border-indigo-400/40 hover:bg-indigo-500/15 hover:text-white active:scale-95"
+                            className="flex items-center justify-center gap-1.5 rounded-xl border border-white/10 bg-[#202c33] py-2 px-3 text-xs font-medium text-[#e9edef] transition hover:border-[#00a884]/60 hover:bg-[#005c4b]/30 active:scale-95 shadow-sm"
                           >
                             <span>{chip.text}</span>
                           </button>
@@ -2649,9 +3203,9 @@ export default function VideoMeetComponent() {
                   <div ref={messagesEndRef} />
                 </div>
 
-                {/* Quick Reaction Emojis Tray */}
-                <div className="flex items-center justify-between border-t border-white/[0.08] bg-slate-950/60 px-3 py-1.5">
-                  {["👋", "👍", "👏", "❤️", "😂", "🔥", "🎉", "🚀"].map((emoji) => (
+                {/* Quick Emoji Reaction Strip */}
+                <div className="flex items-center justify-between border-t border-white/[0.08] bg-[#182229] px-3 py-1.5 select-none">
+                  {["❤️", "👍", "👏", "😂", "😮", "🙏", "🎉", "🔥"].map((emoji) => (
                     <Tooltip key={emoji} title={`Send ${emoji}`}>
                       <button
                         onClick={() => sendMessage(emoji)}
@@ -2663,88 +3217,226 @@ export default function VideoMeetComponent() {
                   ))}
                 </div>
 
-                {/* Message Input Bar */}
-                <div className="border-t border-white/10 bg-slate-950/90 p-3">
-                  <div className="flex items-center gap-2">
-                    <TextField
-                      value={message}
-                      onChange={handleMessage}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" && !e.shiftKey) {
-                          e.preventDefault();
-                          sendMessage();
-                        }
-                      }}
-                      placeholder="Send a message to everyone..."
-                      variant="outlined"
-                      size="small"
-                      fullWidth
-                      InputProps={{
-                        endAdornment: message.trim() ? (
-                          <button
-                            onClick={() => setMessage("")}
-                            className="text-slate-400 hover:text-white p-1 text-xs"
-                            title="Clear message"
-                          >
-                            ✕
-                          </button>
-                        ) : null,
-                      }}
-                      sx={{
-                        "& .MuiOutlinedInput-root": {
-                          borderRadius: "14px",
-                          backgroundColor: "rgba(15, 23, 42, 0.85)",
-                          color: "white",
-                          fontSize: "0.88rem",
-                          "& fieldset": {
-                            borderColor: "rgba(148, 163, 184, 0.25)",
-                          },
-                          "&:hover fieldset": {
-                            borderColor: "rgba(129, 140, 248, 0.6)",
-                          },
-                          "&.Mui-focused fieldset": {
-                            borderColor: "#818cf8",
-                          },
-                        },
-                      }}
-                    />
-
-                    <Tooltip title={message.trim() ? "Send (Enter)" : "Type a message"}>
-                      <span>
-                        <IconButton
-                          onClick={() => sendMessage()}
-                          disabled={!message.trim()}
-                          sx={{
-                            width: "42px",
-                            height: "42px",
-                            borderRadius: "12px",
-                            background: message.trim()
-                              ? "linear-gradient(135deg, #6366f1, #a855f7)"
-                              : "rgba(255,255,255,0.06)",
-                            color: "white",
-                            boxShadow: message.trim()
-                              ? "0 0 12px rgba(99,102,241,0.4)"
-                              : "none",
-                            "&:hover": {
-                              background:
-                                "linear-gradient(135deg, #4f46e5, #9333ea)",
-                            },
-                            "&.Mui-disabled": {
-                              color: "rgba(255,255,255,0.2)",
-                            },
-                          }}
-                        >
-                          <SendIcon sx={{ fontSize: 18 }} />
-                        </IconButton>
+                {/* Reaction GIFs Drawer (WhatsApp Style) */}
+                {showGifPicker && (
+                  <div className="border-t border-white/10 bg-[#1f2c34] p-3 max-h-56 overflow-y-auto animate-fadeIn">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs font-bold text-[#e9edef] flex items-center gap-1.5">
+                        <GifBoxIcon sx={{ fontSize: 16, color: "#00a884" }} />
+                        WhatsApp Reaction GIFs
                       </span>
-                    </Tooltip>
+                      <button
+                        onClick={() => setShowGifPicker(false)}
+                        className="text-[#8696a0] hover:text-white text-xs px-1 py-0.5 rounded"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      {WHATSAPP_GIFS.map((gif) => (
+                        <button
+                          key={gif.id}
+                          onClick={() => {
+                            sendMessage({
+                              type: "gif",
+                              url: gif.url,
+                              label: gif.label,
+                            });
+                            setShowGifPicker(false);
+                          }}
+                          className="group relative aspect-video overflow-hidden rounded-lg bg-black/40 border border-white/10 hover:border-[#00a884] transition active:scale-95 shadow-sm"
+                          title={`Send ${gif.label}`}
+                        >
+                          <img
+                            src={gif.url}
+                            alt={gif.label}
+                            className="h-full w-full object-cover transition group-hover:scale-105"
+                            loading="lazy"
+                          />
+                          <span className="absolute bottom-0 inset-x-0 bg-black/75 py-0.5 text-[9px] font-semibold text-white truncate px-1 text-center">
+                            {gif.label}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                  <div className="mt-1.5 flex items-center justify-between px-1 text-[10px] text-slate-500">
-                    <span>Press Enter to send</span>
-                    <span>Shift + Enter for new line</span>
+                )}
+
+                {/* WhatsApp Attachment Popover Menu */}
+                {showAttachMenu && (
+                  <div className="absolute bottom-16 left-3 z-30 flex flex-col gap-2 rounded-2xl border border-white/15 bg-[#233138] p-3 shadow-2xl backdrop-blur-2xl animate-fadeIn w-52">
+                    {/* Option 1: Photos & Media */}
+                    <button
+                      onClick={() => {
+                        photoInputRef.current?.click();
+                      }}
+                      className="flex items-center gap-3 rounded-xl px-2.5 py-2 text-left text-xs font-medium text-[#e9edef] transition hover:bg-white/10 active:scale-95"
+                    >
+                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-tr from-purple-500 to-pink-500 text-white shadow-md flex-shrink-0">
+                        <ImageIcon sx={{ fontSize: 18 }} />
+                      </div>
+                      <div>
+                        <div className="font-semibold text-white">Photos & Media</div>
+                        <div className="text-[10px] text-[#8696a0]">JPG, PNG, GIF, WEBP</div>
+                      </div>
+                    </button>
+
+                    {/* Option 2: Documents & PDFs */}
+                    <button
+                      onClick={() => {
+                        docInputRef.current?.click();
+                      }}
+                      className="flex items-center gap-3 rounded-xl px-2.5 py-2 text-left text-xs font-medium text-[#e9edef] transition hover:bg-white/10 active:scale-95"
+                    >
+                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-tr from-indigo-500 to-sky-500 text-white shadow-md flex-shrink-0">
+                        <InsertDriveFileIcon sx={{ fontSize: 18 }} />
+                      </div>
+                      <div>
+                        <div className="font-semibold text-white">Document & PDF</div>
+                        <div className="text-[10px] text-[#8696a0]">PDF, DOC, TXT, CSV</div>
+                      </div>
+                    </button>
+                  </div>
+                )}
+
+                {/* WhatsApp Message Input Bar */}
+                <div className="relative border-t border-white/10 bg-[#202c33] p-2.5 sm:p-3">
+                  {/* Hidden File Inputs for Photo & Documents */}
+                  <input
+                    ref={photoInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => handleFileUpload(e, "image")}
+                    className="hidden"
+                  />
+                  <input
+                    ref={docInputRef}
+                    type="file"
+                    accept=".pdf,.doc,.docx,.txt,.csv,.xlsx,.ppt,.pptx"
+                    onChange={(e) => handleFileUpload(e, "doc")}
+                    className="hidden"
+                  />
+
+                  <div className="flex items-center gap-1.5 sm:gap-2">
+                    {/* Reaction GIFs Button */}
+                    <Tooltip title={showGifPicker ? "Close GIFs" : "Reaction GIFs"}>
+                      <button
+                        onClick={() => {
+                          setShowGifPicker((prev) => !prev);
+                          setShowAttachMenu(false);
+                        }}
+                        className={`flex h-9 w-9 items-center justify-center rounded-full transition ${
+                          showGifPicker
+                            ? "bg-[#00a884]/25 text-[#00a884]"
+                            : "text-[#8696a0] hover:text-[#e9edef] hover:bg-white/10"
+                        }`}
+                        aria-label="Reaction GIFs"
+                      >
+                        <GifBoxIcon sx={{ fontSize: 22 }} />
+                      </button>
+                    </Tooltip>
+
+                    {/* WhatsApp Paperclip Attachment Button */}
+                    <Tooltip title="Attach Photo, Document or PDF">
+                      <button
+                        onClick={() => {
+                          setShowAttachMenu((prev) => !prev);
+                          setShowGifPicker(false);
+                        }}
+                        className={`flex h-9 w-9 items-center justify-center rounded-full transition ${
+                          showAttachMenu
+                            ? "bg-[#00a884]/25 text-[#00a884]"
+                            : "text-[#8696a0] hover:text-[#e9edef] hover:bg-white/10"
+                        }`}
+                        aria-label="Attach File"
+                      >
+                        <AttachFileIcon sx={{ fontSize: 20, transform: "rotate(45deg)" }} />
+                      </button>
+                    </Tooltip>
+
+                    {/* WhatsApp Capsule Input */}
+                    <div className="flex-1 flex items-center rounded-2xl bg-[#2a3942] px-3.5 py-1.5 border border-transparent focus-within:border-[#00a884]/60 transition">
+                      <input
+                        value={message}
+                        onChange={handleMessage}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && !e.shiftKey) {
+                            e.preventDefault();
+                            sendMessage();
+                          }
+                        }}
+                        placeholder="Type a message..."
+                        className="w-full bg-transparent text-[13.5px] text-[#e9edef] placeholder-[#8696a0] focus:outline-none"
+                      />
+                      {message.trim() && (
+                        <button
+                          onClick={() => setMessage("")}
+                          className="text-[#8696a0] hover:text-white p-1 text-xs"
+                          title="Clear"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
+
+                    {/* WhatsApp Green Circular Send Button */}
+                    <Tooltip title={message.trim() ? "Send (Enter)" : "Type a message"}>
+                      <button
+                        onClick={() => sendMessage()}
+                        disabled={!message.trim()}
+                        className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full transition shadow-md active:scale-95 ${
+                          message.trim()
+                            ? "bg-[#00a884] text-white hover:bg-[#02906f]"
+                            : "bg-[#2a3942] text-[#8696a0] cursor-not-allowed opacity-60"
+                        }`}
+                      >
+                        <SendIcon sx={{ fontSize: 18 }} />
+                      </button>
+                    </Tooltip>
                   </div>
                 </div>
               </aside>
+            )}
+
+            {/* Lightbox / Fullscreen Image Preview Modal */}
+            {previewMedia && (
+              <div
+                onClick={() => setPreviewMedia(null)}
+                className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 backdrop-blur-md animate-fadeIn"
+              >
+                <div
+                  onClick={(e) => e.stopPropagation()}
+                  className="relative max-w-4xl max-h-[90vh] overflow-hidden rounded-2xl border border-white/20 bg-slate-950 p-2 shadow-2xl flex flex-col"
+                >
+                  <div className="flex items-center justify-between px-3 py-2 border-b border-white/10">
+                    <span className="text-xs font-semibold text-white truncate max-w-md">
+                      {previewMedia.name || "Photo Preview"}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <a
+                        href={previewMedia.url}
+                        download={previewMedia.name || "image.png"}
+                        className="flex items-center gap-1.5 rounded-lg bg-[#00a884] px-3 py-1 text-xs font-medium text-white hover:bg-[#02906f] transition"
+                      >
+                        <DownloadIcon sx={{ fontSize: 14 }} /> Download
+                      </a>
+                      <button
+                        onClick={() => setPreviewMedia(null)}
+                        className="rounded-lg p-1 text-slate-400 hover:bg-white/10 hover:text-white transition"
+                      >
+                        <CloseIcon sx={{ fontSize: 18 }} />
+                      </button>
+                    </div>
+                  </div>
+                  <div className="flex-1 overflow-auto flex items-center justify-center p-2">
+                    <img
+                      src={previewMedia.url}
+                      alt={previewMedia.name || "Preview"}
+                      className="max-h-[75vh] w-auto rounded-lg object-contain shadow-lg"
+                    />
+                  </div>
+                </div>
+              </div>
             )}
           </main>
         </div>
